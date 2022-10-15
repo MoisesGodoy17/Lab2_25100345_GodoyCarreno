@@ -42,3 +42,5 @@ flipV(I, I2):-
     image(X, Y, Pixeles, I),
     invierteImagenV(Pixeles, X, Y, _, L),
     image(X, Y, L, I2).
+
+%%hola, estoy probando
