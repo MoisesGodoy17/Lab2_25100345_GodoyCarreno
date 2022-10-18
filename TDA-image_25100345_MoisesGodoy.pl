@@ -43,4 +43,20 @@ flipV(I, I2):-
     invierteImagenV(Pixeles, X, Y, _, L),
     image(X, Y, L, I2).
 
-%%hola, estoy probando
+crop([], _, _, _, _, _, _, ListaPxeles, ListaPixeles).
+crop([Pixel|Cdr], Ancho, Largo, X1, Y1, X2, Y2, NewPixeles, L):-
+    pixbit-d(X, Y, Bit, Depth, Pixel),
+    (   X1 =< X , X =< X2 , Y1 =< Y , Y =< Y2
+    ->  agregar(Pixel, NewPixeles, ListaPixeles)
+    ;   crop(Cdr, Ancho, Largo, X1, Y1, X2, Y2, NewPixeles, L)
+    ),
+    crop(Cdr, Ancho, Largo, X1, Y1, X2, Y2, ListaPixeles, L).
+
+imageCrop(I, X1, Y1, X2, Y2, I2):-
+    image(X, Y, Pixeles, I),
+    crop(Pixeles, X, Y, X1, Y1, X2, Y2, _, L),
+    image(X, Y, L, I2).
+
+% trace, (pixbit-d( 0, 0, 1, 10, PA), pixbit-d( 0, 1, 0, 20, PB), 
+% pixbit-d( 1, 0, 0, 30, PC), pixbit-d( 1, 1, 1, 4, PD), 
+% image( 2, 2, [PA, PB, PC, PD], I), imageCrop( I , 0, 1, 1, 1, I2 )).
