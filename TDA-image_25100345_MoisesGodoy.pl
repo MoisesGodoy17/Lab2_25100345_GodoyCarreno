@@ -43,9 +43,9 @@ flipV(I, I2):-
     invierteImagenV(Pixeles, X, Y, _, L),
     image(X, Y, L, I2).
 
-crop([], _, _, _, _, _, _, ListaPxeles, ListaPixeles).
+crop([], _, _, _, _, _, _, ListaPixeles, ListaPixeles).
 crop([Pixel|Cdr], Ancho, Largo, X1, Y1, X2, Y2, NewPixeles, L):-
-    pixbit-d(X, Y, Bit, Depth, Pixel),
+    pixbit-d(X, Y, _, _, Pixel),
     (   X1 =< X , X =< X2 , Y1 =< Y , Y =< Y2
     ->  agregar(Pixel, NewPixeles, ListaPixeles)
     ;   crop(Cdr, Ancho, Largo, X1, Y1, X2, Y2, NewPixeles, L)
@@ -55,8 +55,17 @@ crop([Pixel|Cdr], Ancho, Largo, X1, Y1, X2, Y2, NewPixeles, L):-
 imageCrop(I, X1, Y1, X2, Y2, I2):-
     image(X, Y, Pixeles, I),
     crop(Pixeles, X, Y, X1, Y1, X2, Y2, _, L),
-    image(X, Y, L, I2).
+    NewX is ((X1 - X2) - 1)*(-1),
+    NewY is ((Y1 - Y2) - 1)*(-1),
+    image(NewX, NewY, L, I2).
 
-% trace, (pixbit-d( 0, 0, 1, 10, PA), pixbit-d( 0, 1, 0, 20, PB), 
+% pixmap de 2X2.
+% pixbit-d( 0, 0, 1, 10, PA), pixbit-d( 0, 1, 0, 20, PB), 
 % pixbit-d( 1, 0, 0, 30, PC), pixbit-d( 1, 1, 1, 4, PD), 
-% image( 2, 2, [PA, PB, PC, PD], I), imageCrop( I , 0, 1, 1, 1, I2 )).
+% image( 2, 2, [PA, PB, PC, PD], I), imageCrop( I , 0, 1, 1, 1, I2 ).
+
+% pixmap de 3X3.
+% pixbit-d( 0, 0, 1, 10, PA), pixbit-d( 0, 1, 0, 20, PB), pixbit-d(0, 2, 1, 25, PC),
+% pixbit-d( 1, 0, 0, 30, PD), pixbit-d( 1, 1, 1, 4, PE), pixbit-d(1, 2, 1, 45, PF),
+% pixbit-d( 2, 0, 1, 50, PG), pixbit-d(2, 1, 0, 60, PH), pixbit-d(2, 2, 1, 55, PI), 
+% image( 3, 3, [PA, PB, PC, PD, PE, PF, PG, PH, PI], I), imageCrop( I , 1, 2, 2, 2, I2 ).
