@@ -69,3 +69,37 @@ imageCrop(I, X1, Y1, X2, Y2, I2):-
 % pixbit-d( 1, 0, 0, 30, PD), pixbit-d( 1, 1, 1, 4, PE), pixbit-d(1, 2, 1, 45, PF),
 % pixbit-d( 2, 0, 1, 50, PG), pixbit-d(2, 1, 0, 60, PH), pixbit-d(2, 2, 1, 55, PI), 
 % image( 3, 3, [PA, PB, PC, PD, PE, PF, PG, PH, PI], I), imageCrop( I , 1, 2, 2, 2, I2 ).
+
+makeHex(Num, ListRest, L):-
+    Rest is div(Num, 16),
+	M is (Num - (16 * Rest)),
+    agregar(Rest, L, ListRest),
+    agregar(M, L, ListRest).
+
+
+rgbToHex([], _, _, ListaPixeles, ListaPixeles).
+rgbToHex([Pixel|Cdr], Ancho, Largo, _, ListaAux):-
+    pixrgb-d(_, _, R, G, B, _, Pixel),
+    makeHex(R, ListaPixeles, L),
+    makeHex(G, ListaPixeles, L),
+    makeHex(B, ListaPixeles, L),
+    %agregar(Pixel, ListaAux, ListaPixeles),
+    rgbToHex(Cdr, Ancho, Largo, ListaPixeles, ListaAux).
+
+imageRGBToHex(I, I2):-
+    image(X, Y, Pixeles, I),
+    rgbToHex(Pixeles, X, Y, _, L),
+    image(X, Y, L, I2).
+
+
+%pixRGB-d -> rgbTohex
+% pixrgb-d( 0, 0, 255, 255, 1, 10, PA), pixrgb-d( 0, 1, 0, 0, 255, 20, PB), 
+% pixrgb-d( 1, 0, 0, 0, 0, 30, PC), pixrgb-d( 1, 1, 255, 255, 255, 4, PD), 
+% image( 2, 2, [PA, PB, PC, PD], I), imageRGBToHex( I, I2 ).
+
+%N is div(255, 16),
+	% M is (255 - (16 * N)),
+	% (   N = 12
+	% ->  Acc = "C"
+	% ;   Acc = N
+	% ).
