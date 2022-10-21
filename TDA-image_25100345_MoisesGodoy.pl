@@ -128,9 +128,9 @@ histograma([Pixel|Cdr], Pixeles, Ancho, Largo, ListAux, L):-
     NewBit = Bit,
     (   estaPixel(NewBit, ListAux)
     ->  histograma(Cdr, Pixeles, Ancho, Largo, ListAux, L)
-    ;   repetidos(Pixeles, NewBit, 0, Cant), agregar([NewBit,Cant], ListAux, Histogram)
-    ),
-    histograma(Cdr, Pixeles, Ancho, Largo, Histogram, L).
+    ;   repetidos(Pixeles, NewBit, 0, Cant), agregar([NewBit,Cant], ListAux, Histogram),
+        histograma(Cdr, Pixeles, Ancho, Largo, Histogram, L)
+    ).
 
 imageToHistogram( I, Histograma):-
     image(X, Y, Pixeles, I),
@@ -159,4 +159,8 @@ imageToHistogram( I, Histograma):-
 
 % pixbit-d( 0, 0, 1, 10, PA), pixbit-d( 0, 1, 0, 20, PB), 
 % pixbit-d(1, 0, 1, 25, PC), pixbit-d( 1, 1, 0, 30, PD), 
-% image( 2, 2, [PA, PB, PC, PD], I), imageToHistogram( I , Histograma)
+% image( 2, 2, [PA, PB, PC, PD], I), imageToHistogram( I , Histograma).
+
+%pixhex-d( 0, 0, '#AAFF01', 10, PA), pixhex-d( 0, 1, '#AAFF01', 20, PB), 
+%pixhex-d( 1, 0, '#0001FF', 25, PC),pixhex-d( 1, 1, '#AAFF01', 30, PD), 
+%image( 2, 2, [PA, PB, PC, PD], I), imageToHistogram( I , Histograma).
