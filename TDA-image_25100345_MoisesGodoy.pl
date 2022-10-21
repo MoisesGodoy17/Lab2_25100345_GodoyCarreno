@@ -103,15 +103,8 @@ imageRGBToHex(I, I2):-
 
 pixelHisto(Bit, Cant, [Bit, Cant]).
 
-%estaPixel(_, Pixel, Pixel).
-%estaPixel([Pixi|Cdr], _, Pixel):-
-    %pixelHisto(Bit, _, Pixi),
-    %Nbit is Bit,
-    %estaPixel(Cdr, Nbit, Pixel).
-
-%dameDato([[Car|_]|_], Car).
-
-estaPixel(Pixel, [[Pixel|_]|_]).
+estaPixel(_, []):-!, false.
+estaPixel(Pixel, [[Pixel|_]|_]):-!, true.
 estaPixel(Pixel, [_|Cdr]):-
     estaPixel(Pixel, Cdr).
 
@@ -122,22 +115,22 @@ estaPixel(Pixel, [_|Cdr]):-
 repetidos([], _, Aux, Aux):-!.
 repetidos([Pix|Cdr], Pixel, Acc, L):-
     pixbit-d( _, _, Bit, _, Pix),
-    Nbit is Bit,
+    Nbit = Bit,
     (   Pixel = Nbit
     ->  Aux is Acc + 1
     ;   Aux is Acc
     ),
     repetidos(Cdr, Pixel, Aux, L).
 
-histograma([], _, _, _, Histogram, Histogram).
+histograma([], _, _, _, Histogram, Histogram):-!.
 histograma([Pixel|Cdr], Pixeles, Ancho, Largo, ListAux, L):-
     pixbit-d( _, _, Bit, _, Pixel ),
-    (   estaPixel(Bit, ListAux) 
+    NewBit = Bit,
+    (   estaPixel(NewBit, ListAux)
     ->  histograma(Cdr, Pixeles, Ancho, Largo, ListAux, L)
     ;   repetidos(Pixeles, NewBit, 0, Cant), agregar([NewBit,Cant], ListAux, Histogram)
     ),
     histograma(Cdr, Pixeles, Ancho, Largo, Histogram, L).
-
 
 imageToHistogram( I, Histograma):-
     image(X, Y, Pixeles, I),
