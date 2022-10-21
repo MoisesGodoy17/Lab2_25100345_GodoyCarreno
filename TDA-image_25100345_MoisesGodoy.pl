@@ -101,9 +101,43 @@ imageRGBToHex(I, I2):-
     rgbToHex(Pixeles, X, Y, _, L),
     image(X, Y, L, I2).
 
+pixelHisto(Bit, Cant, [Bit, Cant]).
+
+estaPixel([], Pixel, Pixel).
+estaPixel([Pixi|Cdr], _, Pixel):-
+    pixelHisto(Bit, _, Pixi),
+    Nbit is Bit,
+    estaPixel(Cdr, Nbit, Pixel).
+
+%pertenece( Elemento, [Elemento|_] ).
+%pertenece( Elemento, [_|Resto] ) :-
+	%pertenece( Elemento, Resto ).
+
+repetidos([], _, Aux, Aux):-!.
+repetidos([Pix|Cdr], Pixel, Acc, L):-
+    pixbit-d( _, _, Bit, _, Pix),
+    Nbit is Bit,
+    (   Pixel = Nbit
+    ->  Aux is Acc + 1
+    ;   Aux is Acc
+    ),
+    repetidos(Cdr, Pixel, Aux, L).
+
+histograma([], _, _, _, ListH, ListH).
+histograma([Pixel|Cdr], Pixeles, Ancho, Largo, ListAux, L):-
+    pixbit-d( _, _, Bit, _, Pixel ),
+    NewBit is Bit,
+    (   estaPixel(Histogram, _, Pixel) 
+    ->  histograma(Cdr, Pixeles, Ancho, Largo, ListAux, L)
+    ;   repetidos(Pixeles, NewBit, 0, Cant), agregar([NewBit,Cant], ListAux, Histogram)
+    ),
+    histograma(Cdr, Pixeles, Ancho, Largo, Histogram, L).
+
+
 imageToHistogram( I, Histograma):-
     image(X, Y, Pixeles, I),
-    histograma
+    histograma(Pixeles, Pixeles, X, Y, _, L),
+    image(X, Y, L, Histograma).
 
 % pixmap de 2X2.
 % pixbit-d( 0, 0, 1, 10, PA), pixbit-d( 0, 1, 0, 20, PB), 
@@ -124,3 +158,7 @@ imageToHistogram( I, Histograma):-
 % pixrgb-d( 0, 0, 200, 255, 101, 10, PA), pixrgb-d( 0, 1, 199, 0, 10, 20, PB), 
 % pixrgb-d( 1, 0, 1, 155, 239, 30, PC), pixrgb-d( 1, 1, 123, 255, 89, 4, PD), 
 % image( 2, 2, [PA, PB, PC, PD], I), imageRGBToHex( I, I2 ).
+
+% pixbit-d( 0, 0, 1, 10, PA), pixbit-d( 0, 1, 0, 20, PB), 
+% pixbit-d(1, 0, 1, 25, PC), pixbit-d( 1, 1, 0, 30, PD), 
+% image( 2, 2, [PA, PB, PC, PD], I), imageToHistogram( I , Histograma)
