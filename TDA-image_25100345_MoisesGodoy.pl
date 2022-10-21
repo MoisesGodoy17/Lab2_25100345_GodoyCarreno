@@ -103,11 +103,17 @@ imageRGBToHex(I, I2):-
 
 pixelHisto(Bit, Cant, [Bit, Cant]).
 
-estaPixel([], Pixel, Pixel).
-estaPixel([Pixi|Cdr], _, Pixel):-
-    pixelHisto(Bit, _, Pixi),
-    Nbit is Bit,
-    estaPixel(Cdr, Nbit, Pixel).
+%estaPixel(_, Pixel, Pixel).
+%estaPixel([Pixi|Cdr], _, Pixel):-
+    %pixelHisto(Bit, _, Pixi),
+    %Nbit is Bit,
+    %estaPixel(Cdr, Nbit, Pixel).
+
+%dameDato([[Car|_]|_], Car).
+
+estaPixel(Pixel, [[Pixel|_]|_]).
+estaPixel(Pixel, [_|Cdr]):-
+    estaPixel(Pixel, Cdr).
 
 %pertenece( Elemento, [Elemento|_] ).
 %pertenece( Elemento, [_|Resto] ) :-
@@ -123,11 +129,10 @@ repetidos([Pix|Cdr], Pixel, Acc, L):-
     ),
     repetidos(Cdr, Pixel, Aux, L).
 
-histograma([], _, _, _, ListH, ListH).
+histograma([], _, _, _, Histogram, Histogram).
 histograma([Pixel|Cdr], Pixeles, Ancho, Largo, ListAux, L):-
     pixbit-d( _, _, Bit, _, Pixel ),
-    NewBit is Bit,
-    (   estaPixel(Histogram, _, Pixel) 
+    (   estaPixel(Bit, ListAux) 
     ->  histograma(Cdr, Pixeles, Ancho, Largo, ListAux, L)
     ;   repetidos(Pixeles, NewBit, 0, Cant), agregar([NewBit,Cant], ListAux, Histogram)
     ),
