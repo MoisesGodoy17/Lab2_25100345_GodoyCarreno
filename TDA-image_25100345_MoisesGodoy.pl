@@ -137,6 +137,21 @@ imageToHistogram( I, Histograma):-
     histograma(Pixeles, Pixeles, X, Y, _, L),
     image(X, Y, L, Histograma).
 
+agregaInicio(Lista1, Elemento, [Elemento|Lista1]).
+
+rotate90([], _, _, _, _, ImgRotatada, ImgRotada).
+rotate90([Pixel|Cdr], Largo, Ancho, Acum, Temp, ListAux, L):- 
+    pixbit-d(X, Y, Bit, Depth, Pixel),
+    (   Acum = (Ancho + 1) %agregar el pixel acutal a la lista de pixeles, porque al activar este caso se lo saltara
+    ->  NewTemp is Temp - 1, agregaInicio(Cdr, Pixel, Cdr), rotate90(Cdr, Largo, Ancho, 0, NewTemp, ListaAux, L)
+    ;   pixbit-d(Acum, Temp, Bit, Depth, Pixel), NewAcum is Acum + 1, agregar(Pixel, ListAux, ImgRotada), rotate90(Cdr, Largo, Ancho, NewAcum, Temp, ImgRotada, L)
+    ).
+
+imageRotate90( I, I2):-
+    image(X, Y, Pixeles, I),
+    rotate90(Pixeles, X, Y, Acum, Temp, _, L),
+    image(Y, X, L, I2).
+
 % pixmap de 2X2.
 % pixbit-d( 0, 0, 1, 10, PA), pixbit-d( 0, 1, 0, 20, PB), 
 % pixbit-d( 1, 0, 0, 30, PC), pixbit-d( 1, 1, 1, 4, PD), 
