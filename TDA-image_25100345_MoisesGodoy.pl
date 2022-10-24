@@ -139,17 +139,18 @@ imageToHistogram( I, Histograma):-
 
 agregaInicio(Lista1, Elemento, [Elemento|Lista1]).
 
-rotate90([], _, _, _, _, ImgRotatada, ImgRotada).
+rotate90([], _, _, _, _, ImgRotada, ImgRotada).
 rotate90([Pixel|Cdr], Largo, Ancho, Acum, Temp, ListAux, L):- 
-    pixbit-d(X, Y, Bit, Depth, Pixel),
-    (   Acum = (Ancho + 1) %agregar el pixel acutal a la lista de pixeles, porque al activar este caso se lo saltara
-    ->  NewTemp is Temp - 1, agregaInicio(Cdr, Pixel, Cdr), rotate90(Cdr, Largo, Ancho, 0, NewTemp, ListaAux, L)
-    ;   pixbit-d(Acum, Temp, Bit, Depth, Pixel), NewAcum is Acum + 1, agregar(Pixel, ListAux, ImgRotada), rotate90(Cdr, Largo, Ancho, NewAcum, Temp, ImgRotada, L)
+    pixbit-d(_, _, Bit, Depth, Pixel),
+    (   Acum = (Ancho) %agregar el pixel acutal a la lista de pixeles, porque al activar este caso se lo saltara
+    ->  NewTemp is Temp - 1,  rotate90([Pixel|Cdr], Largo, Ancho, 0, NewTemp, ListAux, L)
+    ;   pixbit-d(Acum, Temp, Bit, Depth, NewPixel), NewAcum is Acum + 1, agregar(NewPixel, ListAux, ImgRotada), rotate90(Cdr, Largo, Ancho, NewAcum, Temp, ImgRotada, L)
     ).
 
 imageRotate90( I, I2):-
     image(X, Y, Pixeles, I),
-    rotate90(Pixeles, X, Y, Acum, Temp, _, L),
+    NewX is X - 1,
+    rotate90(Pixeles, X, Y, 0, NewX, _, L),
     image(Y, X, L, I2).
 
 % pixmap de 2X2.
