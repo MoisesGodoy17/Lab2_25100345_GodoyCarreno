@@ -153,6 +153,23 @@ imageRotate90( I, I2):-
     rotate90(Pixeles, X, Y, 0, NewX, _, L),
     image(Y, X, L, I2).
 
+pixelToString([], _, _, _, AuxL, AuxL).
+pixelToString([Pixel | Pixeles], StrP, Acum, Ancho, AuxL, L):-
+    NewAcum is Acum + 1,
+    (   NewAcum = Ancho
+    ->  atomic_list_concat(Pixel, StrP), atomic_concat(StrP, '\n', StrTemp), agregar(StrTemp, AuxL, ImgStr), pixelToString(Pixeles, _, 0, Ancho, ImgStr, L)
+    ;   atomic_list_concat(Pixel, StrP), atomic_concat(StrP, '\t', StrTemp), agregar(StrTemp, AuxL, ImgStr), pixelToString(Pixeles, _, NewAcum, Ancho, ImgStr, L)
+    ).
+
+imgToString(I, ImgStr):-
+    image(_, Ancho, Pixeles, I),
+    pixelToString(Pixeles, _, 0, Ancho, _, L),
+    atomic_list_concat(L, ImgStr).
+
+%pixbit-d( 0, 0, 1, 10, PA), pixbit-d( 0, 1, 2, 20, PB), pixbit-d(1, 0, 3, 25, PC),
+%pixbit-d( 1, 1, 4, 30, PD), pixbit-d( 2, 0, 5, 4, PE), pixbit-d(2, 1, 6, 45, PF),
+%image( 3, 2, [PA, PB, PC, PD, PE, PF], I), imgToString(I, ImgStr), write(ImgStr).
+
 % pixmap de 2X2.
 % pixbit-d( 0, 0, 1, 10, PA), pixbit-d( 0, 1, 0, 20, PB), 
 % pixbit-d( 1, 0, 0, 30, PC), pixbit-d( 1, 1, 1, 4, PD), 
