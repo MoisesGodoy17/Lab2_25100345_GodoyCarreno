@@ -17,6 +17,38 @@ agregar(E, [], [E]).
 agregar(E, [X|Y], [X|Z]):-
     agregar(E, Y, Z).
 
+pixelIsBitmap([]).
+pixelIsBitmap([Pixel|Cdr]) :-
+    pixbit-d(_, _, Bit, _, Pixel),
+    (Bit == 0 ; Bit == 1),
+    pixelIsBitmap(Cdr).
+
+imageIsBitmap(Image) :-
+    image(_, _, Pixeles, Image),
+    pixelIsBitmap(Pixeles).
+
+pixelIsPixrgb([]).
+pixelIsPixrgb([Pixel|Cdr]):-
+    pixrgb-d( _, _, R, G, B, _, Pixel),
+    (R >= 0 , R =< 255),
+    (G >= 0 , G =< 255),
+    (B >= 0 , B =< 255),
+    pixelIsPixrgb(Cdr).
+
+imageIsPixmap(Image):-
+    image( _, _, Pixeles, Image),
+    pixelIsPixrgb(Pixeles).
+
+pixelIsHexmap([]).
+pixelIsHexmap([Pixel| Cdr]):-
+    pixhex-d( _, _, Hex, _, Pixel),
+    string(Hex),
+    pixelIsHexmap(Cdr).
+
+imageIsHexmap(Image) :-
+    image(_, _, Pixeles, Image),
+    pixelIsHexmap(Pixeles).
+
 invierteImagenH([], _, _, ListaPixeles, ListaPixeles).
 invierteImagenH([Pixel|Cdr], Ancho, Largo, NewPixeles, L):-
     pixbit-d(X, Y, Bit, Depth, Pixel),
@@ -26,7 +58,7 @@ invierteImagenH([Pixel|Cdr], Ancho, Largo, NewPixeles, L):-
     invierteImagenH(Cdr, Ancho, Largo, ListaPixeles, L).
     
 flipH(I, I2):-	
-	image(X, Y, Pixeles, I),
+    image(X, Y, Pixeles, I),
     invierteImagenH(Pixeles, X, Y, _, L),
     image(X, Y, L, I2).
 
@@ -153,17 +185,30 @@ imageRotate90( I, I2):-
     rotate90(Pixeles, X, Y, 0, NewX, _, L),
     image(Y, X, L, I2).
 
-pixelToString([], _, _, _, AuxL, AuxL).
-pixelToString([Pixel | Pixeles], StrP, Acum, Ancho, AuxL, L):-
+pixelToString([], _, _, AuxL, AuxL).
+pixelToString([Pixel | Pixeles], Acum, Ancho, AuxL, L):-
+    pixbit-d( _, _, Bit, _, Pixel),
     NewAcum is Acum + 1,
     (   NewAcum = Ancho
-    ->  atomic_list_concat(Pixel, StrP), atomic_concat(StrP, '\n', StrTemp), agregar(StrTemp, AuxL, ImgStr), pixelToString(Pixeles, _, 0, Ancho, ImgStr, L)
-    ;   atomic_list_concat(Pixel, StrP), atomic_concat(StrP, '\t', StrTemp), agregar(StrTemp, AuxL, ImgStr), pixelToString(Pixeles, _, NewAcum, Ancho, ImgStr, L)
+    ->  atomic_concat(Bit, '\n', StrTemp), agregar(StrTemp, AuxL, ImgStr), pixelToString(Pixeles, 0, Ancho, ImgStr, L)
+    ;   atomic_concat(Bit, '\t', StrTemp), agregar(StrTemp, AuxL, ImgStr), pixelToString(Pixeles, NewAcum, Ancho, ImgStr, L)
+    ).
+
+pixelToStringRGB([], _, _, AuxL, AuxL).
+pixelToStringRGB([Pixel | Pixeles], Acum, Ancho, AuxL, L):-
+    pixrgb-d(_, _, R, G, B, _, Pixel),
+    NewAcum is Acum + 1,
+    (   NewAcum = Ancho
+    ->  atomic_list_concat([R,G,B], StrP), atomic_concat(StrP, '\n', StrTemp), agregar(StrTemp, AuxL, ImgStr), pixelToStringRGB(Pixeles, 0, Ancho, ImgStr, L)
+    ;   atomic_list_concat([R,G,B], StrP), atomic_concat(StrP, '\t', StrTemp), agregar(StrTemp, AuxL, ImgStr), pixelToStringRGB(Pixeles, NewAcum, Ancho, ImgStr, L)
     ).
 
 imgToString(I, ImgStr):-
     image(_, Ancho, Pixeles, I),
-    pixelToString(Pixeles, _, 0, Ancho, _, L),
+    (   pixelIsPixrgb(Pixeles)
+    ->  pixelToStringRGB(Pixeles, 0, Ancho, _, L)
+    ;   pixelToString(Pixeles, 0, Ancho, _, L)
+    ),
     atomic_list_concat(L, ImgStr).
 
 %pixbit-d( 0, 0, 1, 10, PA), pixbit-d( 0, 1, 2, 20, PB), pixbit-d(1, 0, 3, 25, PC),
