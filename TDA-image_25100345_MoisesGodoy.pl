@@ -211,6 +211,37 @@ imgToString(I, ImgStr):-
     ),
     atomic_list_concat(L, ImgStr).
 
+changePixel([], _, ImgMod, ImgMod).
+changePixel([Pixel|Cdr], PixelMod, ListAux, L):-
+    pixbit-d(Xmod, Ymod, _, _, ImgMod),
+    pixbit-d(X, Y, _, _, Pixel),
+    (   X = Xmod, Y = Ymod
+    ->  agregar(PixelMod, ListAux, ImgMod), changePixel(Cdr, PixelMod, ImgMod, L)
+    ;   changePixel(Cdr, PixelMod, ListAux, L)
+    ).
+
+changePixelRGB([], _, ImgMod, ImgMod).
+changePixelRGB([Pixel|Cdr], PixelMod, ListAux, L):-
+    pixrgb-d(Xmod, Ymod, _, _, _, _, PixelMod),
+    pixrgb-d(X, Y, _, _, _, _, Pixel),
+    (   X = Xmod, Y = Ymod
+    ->  agregar(PixelMod, ListAux, ImgMod), changePixelRGB(Cdr, PixelMod, ImgMod, L)
+    ;   agregar(Pixel, ListAux, ImgMod), changePixelRGB(Cdr, PixelMod, ImgMod, L)
+    ).
+
+imageInvertColorRGB(P2, P2_modificado):-
+    pixrgb-d(_, _, R, G, B, _, P2),
+    NewR is 255 - R, NewG is 255 - G, NewB is 255 - B,
+    pixrgb-d(_, _, NewR, NewG, NewB, _, P2_modificado).
+    
+imageChangePixel(I, P2_modificado, I2):-
+    image( X, Y, Pixeles, I),
+    (   pixelIsPixrgb(Pixeles)
+    ->  changePixelRGB(Pixeles, P2_modificado, _, L)
+    ;   changePixel(Pixeles, P2_modificado, _, L)
+    ),
+    image( X, Y, L, I2).
+
 %pixbit-d( 0, 0, 1, 10, PA), pixbit-d( 0, 1, 2, 20, PB), pixbit-d(1, 0, 3, 25, PC),
 %pixbit-d( 1, 1, 4, 30, PD), pixbit-d( 2, 0, 5, 4, PE), pixbit-d(2, 1, 6, 45, PF),
 %image( 3, 2, [PA, PB, PC, PD, PE, PF], I), imgToString(I, ImgStr), write(ImgStr).
@@ -242,3 +273,13 @@ imgToString(I, ImgStr):-
 %pixhex-d( 0, 0, '#AAFF01', 10, PA), pixhex-d( 0, 1, '#AAFF01', 20, PB), 
 %pixhex-d( 1, 0, '#0001FF', 25, PC),pixhex-d( 1, 1, '#AAFF01', 30, PD), 
 %image( 2, 2, [PA, PB, PC, PD], I), imageToHistogram( I , Histograma).
+
+% pixrgb-d( 0, 0, 10, 10, 10, 10, P1), pixrgb-d( 0, 1, 20, 20, 20, 20, P2), 
+% pixrgb-d( 1, 0, 30, 30, 30, 30, P3), pixrgb-d( 1, 1, 40, 40, 40, 40, P4), 
+% image( 2, 2, [P1, P2, P3, P4], I), 
+% pixrgb-d( 0, 1, 54, 54, 54, 20, P2_modificado), imageChangePixel(I, P2_modificado, I2).
+
+% pixrgb-d( 0, 0, 10, 10, 10, 10, P1), pixrgb-d( 0, 1, 20, 20, 20, 20, P2), 
+% pixrgb-d( 1, 0, 30, 30, 30, 30, P3), pixrgb-d( 1, 1, 40, 40, 40, 40, P4), 
+% image( 2, 2, [P1, P2, P3, P4], I1), imageInvertColorRGB(P2, P2_modificado), 
+% imageChangePixel(I1, P2_modificado, I2).
