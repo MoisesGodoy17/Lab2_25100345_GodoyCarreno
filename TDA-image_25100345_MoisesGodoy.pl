@@ -57,9 +57,20 @@ invierteImagenH([Pixel|Cdr], Ancho, Largo, NewPixeles, L):-
     agregar(NewPixel, NewPixeles, ListaPixeles),
     invierteImagenH(Cdr, Ancho, Largo, ListaPixeles, L).
     
+invierteImagenHRGB([], _, _, ListaPixeles, ListaPixeles).
+invierteImagenHRGB([Pixel|Cdr], Ancho, Largo, NewPixeles, L):-
+   pixrgb-d(X, Y, R, G, B, Depth, Pixel),
+   NewY is  (Y - (Ancho - 1)) * (-1),
+   pixrgb-d(X, NewY, R, G, B, Depth, NewPixel),
+   agregar(NewPixel, NewPixeles, ListaPixeles),
+   invierteImagenHRGB(Cdr, Ancho, Largo, ListaPixeles, L).
+    
 flipH(I, I2):-	
     image(X, Y, Pixeles, I),
-    invierteImagenH(Pixeles, X, Y, _, L),
+    (   pixelIsPixrgb(Pixeles)
+    ->  invierteImagenHRGB(Pixeles, X, Y, _, L)
+    ;   invierteImagenH(Pixeles, X, Y, _, L)
+    ),
     image(X, Y, L, I2).
 
 invierteImagenV([], _, _, ListaPixeles, ListaPixeles).
@@ -70,9 +81,20 @@ invierteImagenV([Pixel|Cdr], Ancho, Largo, NewPixeles, L):-
     agregar(NewPixel, NewPixeles, ListaPixeles),
     invierteImagenV(Cdr, Ancho, Largo, ListaPixeles, L).
 
+invierteImagenVRGB([], _, _, ListaPixeles, ListaPixeles).
+invierteImagenVRGB([Pixel|Cdr], Ancho, Largo, NewPixeles, L):-
+    pixrgb-d(X, Y, R, G, B, Depth, Pixel),
+    NewX is  (X - (Largo - 1)) * (-1),
+    pixrgb-d(NewX, Y, R, G, B, Depth, NewPixel),
+    agregar(NewPixel, NewPixeles, ListaPixeles),
+    invierteImagenVRGB(Cdr, Ancho, Largo, ListaPixeles, L).
+
 flipV(I, I2):-
     image(X, Y, Pixeles, I),
-    invierteImagenV(Pixeles, X, Y, _, L),
+    (   pixelIsPixrgb(Pixeles)
+    ->  invierteImagenVRGB(Pixeles, X, Y, _, L)
+    ;   invierteImagenV(Pixeles, X, Y, _, L)
+    ),
     image(X, Y, L, I2).
 
 crop([], _, _, _, _, _, _, ListaPixeles, ListaPixeles).
@@ -84,9 +106,21 @@ crop([Pixel|Cdr], Ancho, Largo, X1, Y1, X2, Y2, NewPixeles, L):-
     ),
     crop(Cdr, Ancho, Largo, X1, Y1, X2, Y2, ListaPixeles, L).
 
+cropRGB([], _, _, _, _, _, _, ListaPixeles, ListaPixeles).
+cropRGB([Pixel|Cdr], Ancho, Largo, X1, Y1, X2, Y2, NewPixeles, L):-
+    pixrgb-d(X, Y, _, _, _, _, Pixel),
+    (   X1 =< X , X =< X2 , Y1 =< Y , Y =< Y2
+    ->  agregar(Pixel, NewPixeles, ListaPixeles)
+    ;   cropRGB(Cdr, Ancho, Largo, X1, Y1, X2, Y2, NewPixeles, L)
+    ),
+    cropRGB(Cdr, Ancho, Largo, X1, Y1, X2, Y2, ListaPixeles, L).
+
 imageCrop(I, X1, Y1, X2, Y2, I2):-
     image(X, Y, Pixeles, I),
-    crop(Pixeles, X, Y, X1, Y1, X2, Y2, _, L),
+    (   pixelIsPixrgb(Pixeles)
+    ->  cropRGB(Pixeles, X, Y, X1, Y1, X2, Y2, _, L)
+    ;   crop(Pixeles, X, Y, X1, Y1, X2, Y2, _, L)
+    ),
     NewX is ((X1 - X2) - 1)*(-1),
     NewY is ((Y1 - Y2) - 1)*(-1),
     image(NewX, NewY, L, I2).
@@ -164,9 +198,39 @@ histograma([Pixel|Cdr], Pixeles, Ancho, Largo, ListAux, L):-
         histograma(Cdr, Pixeles, Ancho, Largo, Histogram, L)
     ).
 
+% ----- \-> PixRGB <-\----- %
+estaPixelRGB(_, _, _,[]):-!, false.
+estaPixelRGB(R, G, B, [[R, G, B, _]|_]):-!, true.
+estaPixelRGB(R, G, B, [_|Cdr]):-
+    estaPixelRGB(R, G, B, Cdr).
+    
+repetidosRGB([], _, Aux, Aux):-!.
+repetidosRGB([Pix|Cdr], Pixel, Acc, L):-
+    pixrgb-d( _, _, R, G, B, _, Pix),
+    pixrgb-d( _, _, RP, GP, BP, _, Pixel),
+    NewR = R, NewG = G, NewB = B,
+    (   RP = NewR, GP = NewG, BP = NewB
+    ->  Aux is Acc + 1
+    ;   Aux is Acc
+    ),
+    repetidosRGB(Cdr, Pixel, Aux, L).
+
+histogramaRGB([], _, _, _, Histogram, Histogram):-!.
+histogramaRGB([Pixel|Cdr], Pixeles, Ancho, Largo, ListAux, L):-
+    pixrgb-d( _, _, R, G, B, _, Pixel),
+    (   estaPixelRGB(R,G,B, ListAux)
+    ->  histogramaRGB(Cdr, Pixeles, Ancho, Largo, ListAux, L)
+    ;   repetidosRGB(Pixeles, Pixel, 0, Cant), agregar([R,G,B, Cant], ListAux, Histogram),
+        histogramaRGB(Cdr, Pixeles, Ancho, Largo, Histogram, L)
+    ).
+% ----- \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ ----- %
+
 imageToHistogram( I, Histograma):-
     image(X, Y, Pixeles, I),
-    histograma(Pixeles, Pixeles, X, Y, _, L),
+     (   pixelIsPixrgb(Pixeles)
+    ->  histogramaRGB(Pixeles, Pixeles, X, Y, _, L)
+    ;   histograma(Pixeles, Pixeles, X, Y, _, L)
+    ),
     image(X, Y, L, Histograma).
 
 agregaInicio(Lista1, Elemento, [Elemento|Lista1]).
