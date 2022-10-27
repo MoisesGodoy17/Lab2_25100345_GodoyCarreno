@@ -1,68 +1,148 @@
 %TDA image mas TDA pixel.
 
+% Meta principal: pixbit
+% Meta secundaria: Null
+% Dom: Int X Int X Int X Int X pixbit
+% Rec: pixbit
+% Descripcion: regla Constructora del TDA pixbit
+
 pixbit-d(X, Y, Bit, Depth, [X, Y, Bit, Depth]).
+
+% Meta principal: pixhex
+% Meta secundaria: Null
+% Dom: Int X Int X String X Int X pixhex
+% Rec: pixhex
+% Descripcion: regla Constructora del TDA pixhex
 
 pixhex-d(X, Y, Hex, Depth, [X, Y, Hex, Depth]).
 
+% Meta principal: pixrgb
+% Meta secundaria: Null
+% Dom: Int X Int X Int X Int X Int X Int X pixrgb
+% Rec: pixrgb
+% Descripcion: regla Constructora del TDA pirgb
+
 pixrgb-d(X, Y, R, G, B, Depth, [X, Y, R, G, B, Depth]).
+
+% Meta principal: image
+% Meta secundaria: Null
+% Dom: Int X Int X [pixrgb | pixhex| pixbit] X Image 
+% Rec: Image
+% Descripcion: regla Constructora del TDA image, la cual unifica los pixeles y las dimensiones de la imagen
 
 image(X, Y, Pixel, [X, Y, Pixel]).
 
-%damePixeles([_, _, Car|_], Car). %funcion que extrae la lista de pixeles de una imagen.
+% Meta principal: agregar
+% Meta secundaria: agregar
+% Dom: [Int | String] X List X List
+% Rec: pixrgb
+% Descripcion: regla que agrega un elemento en una lista, para ello recibe dos listas y el elemento
 
-% Si dejo de comentar la linea 15 mi invierte la lista. 
-agregar(E, [], [E]).
-%agregar(E, L, [E|L]).
-agregar(E, [X|Y], [X|Z]):-
+agregar(E, [], [E]). % caso en que no hayan elementos en la lista
+agregar(E, [X|Y], [X|Z]):- % caso recursivo donde se recorre la lista hasta llegar al caso base
     agregar(E, Y, Z).
+
+% Meta principal: pixelIsBitmap
+% Meta secundaria: pixelIsBitmap, pixbit
+% Dom: List [pixrgb | pixhex| pixbit]
+% Rec: Boolean
+% Descripcion: regla que determina si una lista de pixeles conrresponde a una lista de pixbit
 
 pixelIsBitmap([]).
 pixelIsBitmap([Pixel|Cdr]) :-
     pixbit-d(_, _, Bit, _, Pixel),
-    (Bit == 0 ; Bit == 1),
+    (Bit == 0 ; Bit == 1), % si el Bit es 0 o 1, entoces es un True y sigue con la verificacion
     pixelIsBitmap(Cdr).
+
+% Meta principal: imageIsBitmap
+% Meta secundaria: Image, pixelIsBitmap
+% Dom: Image
+% Rec: Boolean
+% Descripcion: regla que determina si la imagen dada corresponde a un bitmap
 
 imageIsBitmap(Image) :-
     image(_, _, Pixeles, Image),
     pixelIsBitmap(Pixeles).
 
+% Meta principal: pixelIsPixrgb
+% Meta secundaria: pixelIsPixrgb, pixrgb
+% Dom: List [pixrgb | pixhex| pixbit]
+% Rec: Boolean
+% Descripcion: regla que determina si una lista de pixeles conrresponde a una lista de pixrgb
+
 pixelIsPixrgb([]).
 pixelIsPixrgb([Pixel|Cdr]):-
-    pixrgb-d( _, _, R, G, B, _, Pixel),
-    (R >= 0 , R =< 255),
+    pixrgb-d( _, _, R, G, B, _, Pixel), % en caso de entregar un pixbit o pixhex dara falso
+    (R >= 0 , R =< 255), % si las componentes del RGB estan entre 0 y 255 entonces corresponden a un pixrgb
     (G >= 0 , G =< 255),
     (B >= 0 , B =< 255),
     pixelIsPixrgb(Cdr).
+
+% Meta principal: imageIsPixmap
+% Meta secundaria: Image, pixelIsPixrgb
+% Dom: Image
+% Rec: Boolean
+% Descripcion: regla que determina si la imagen dada corresponde a un pixmap
 
 imageIsPixmap(Image):-
     image( _, _, Pixeles, Image),
     pixelIsPixrgb(Pixeles).
 
+% Meta principal: pixelIsHexmap
+% Meta secundaria: pixelIsHexmap
+% Dom: List [pixrgb | pixhex| pixbit]
+% Rec: Boolean
+% Descripcion: regla que determina si una lista de pixeles conrresponde a una lista de pixhex
+
 pixelIsHexmap([]).
 pixelIsHexmap([Pixel| Cdr]):-
     pixhex-d( _, _, Hex, _, Pixel),
-    string(Hex),
+    string(Hex), % pregunta si el bit es String
     pixelIsHexmap(Cdr).
+
+% Meta principal: imageIsHexmap
+% Meta secundaria: Image, pixelIsPixhex
+% Dom: Image
+% Rec: Boolean
+% Descripcion: regla que determina si la imagen dada corresponde a un pixhex
 
 imageIsHexmap(Image) :-
     image(_, _, Pixeles, Image),
     pixelIsHexmap(Pixeles).
 
+% Meta principal: invierteImagenH
+% Meta secundaria: pixbit, agregar, invierteImagenH
+% Dom: List [pixbit | pixhex] X Int X Int X Symbol X Symbol
+% Rec: List
+% Descripcion: conjunto de reglas que invierte el valor de la coordenada "Y" de un pixel pixbit o -pixhex
+
 invierteImagenH([], _, _, ListaPixeles, ListaPixeles).
 invierteImagenH([Pixel|Cdr], Ancho, Largo, NewPixeles, L):-
     pixbit-d(X, Y, Bit, Depth, Pixel),
-    NewY is  (Y - (Ancho - 1)) * (-1),
-    pixbit-d(X, NewY, Bit, Depth, NewPixel),
+    NewY is  (Y - (Ancho - 1)) * (-1), % se invierte el valor de la coordenada Y
+    pixbit-d(X, NewY, Bit, Depth, NewPixel), % se crea un nuevo bit con la nueva coordenada
     agregar(NewPixel, NewPixeles, ListaPixeles),
     invierteImagenH(Cdr, Ancho, Largo, ListaPixeles, L).
+
+% Meta principal: invierteImagenHRGB
+% Meta secundaria: pixrgb, agregar, invierteImagenH
+% Dom: List [pixrgb] X Int X Int X Symbol X Symbol
+% Rec: List
+% Descripcion: conjunto de reglas que invierte el valor de la coordenada "Y" de un pixel rgb
     
 invierteImagenHRGB([], _, _, ListaPixeles, ListaPixeles).
 invierteImagenHRGB([Pixel|Cdr], Ancho, Largo, NewPixeles, L):-
    pixrgb-d(X, Y, R, G, B, Depth, Pixel),
    NewY is  (Y - (Ancho - 1)) * (-1),
-   pixrgb-d(X, NewY, R, G, B, Depth, NewPixel),
+   pixrgb-d(X, NewY, R, G, B, Depth, NewPixel), % crea el nuevo pixrgb con la coordenada nueva
    agregar(NewPixel, NewPixeles, ListaPixeles),
    invierteImagenHRGB(Cdr, Ancho, Largo, ListaPixeles, L).
+
+% Meta principal: flipH
+% Meta secundaria: Image, pixelIsPixrgb, invierteImagenHRGB, invierteImagenH
+% Dom: Image X Symbol (NewImagen)
+% Rec: Imagen
+% Descripcion: conjunto de reglas permiten girar horizontalmente una imagen cambiando las coordenadas del eje "Y"
     
 flipH(I, I2):-	
     image(X, Y, Pixeles, I),
@@ -72,13 +152,25 @@ flipH(I, I2):-
     ),
     image(X, Y, L, I2).
 
+% Meta principal: invierteImagenV
+% Meta secundaria: pixbit, agregar, invierteImagenV
+% Dom: List [pixbit | pixhex] X Int X Int X Symbol X Symbol
+% Rec: List
+% Descripcion: conjunto de reglas que invierte el valor de la coordenada "X" de un pixel pixbit o -pixhex
+
 invierteImagenV([], _, _, ListaPixeles, ListaPixeles).
 invierteImagenV([Pixel|Cdr], Ancho, Largo, NewPixeles, L):-
     pixbit-d(X, Y, Bit, Depth, Pixel),
-    NewX is  (X - (Largo - 1)) * (-1),
-    pixbit-d(NewX, Y, Bit, Depth, NewPixel),
-    agregar(NewPixel, NewPixeles, ListaPixeles),
+    NewX is  (X - (Largo - 1)) * (-1), % invierte el bit, ej: X = 0 pase a ser X = 2 (en caso de que el largo de la imagen sea 2)
+    pixbit-d(NewX, Y, Bit, Depth, NewPixel), % crea un nuevo pixel con la coordenada X invertida
+    agregar(NewPixel, NewPixeles, ListaPixeles), % agrega el pixel a una lista de pixeles
     invierteImagenV(Cdr, Ancho, Largo, ListaPixeles, L).
+
+% Meta principal: invierteImagenVRGB
+% Meta secundaria: pixhex, agregar, invierteImagenVRGB
+% Dom: List [pixhex] X Int X Int X Symbol X Symbol
+% Rec: List
+% Descripcion: conjunto de reglas que invierte el valor de la coordenada "X" de un pixel pixbit o -pixhex
 
 invierteImagenVRGB([], _, _, ListaPixeles, ListaPixeles).
 invierteImagenVRGB([Pixel|Cdr], Ancho, Largo, NewPixeles, L):-
@@ -88,6 +180,12 @@ invierteImagenVRGB([Pixel|Cdr], Ancho, Largo, NewPixeles, L):-
     agregar(NewPixel, NewPixeles, ListaPixeles),
     invierteImagenVRGB(Cdr, Ancho, Largo, ListaPixeles, L).
 
+% Meta principal: flipV
+% Meta secundaria: Image, pixelIsPixrgb, invierteImagenVRGB, invierteImagenV
+% Dom: Image X Symbol (New Image)
+% Rec: Imagen
+% Descripcion: reglas que permiten girar verticalmente una imagen cambiando las coordenadas del eje "X"
+
 flipV(I, I2):-
     image(X, Y, Pixeles, I),
     (   pixelIsPixrgb(Pixeles)
@@ -95,6 +193,12 @@ flipV(I, I2):-
     ;   invierteImagenV(Pixeles, X, Y, _, L)
     ),
     image(X, Y, L, I2).
+
+% Meta principal: crop
+% Meta secundaria: pixbit, agregar, crop
+% Dom: List [pixhex | pixbit] X Int X Int X Int X Int X Int X Int X Symbol X Symbol 
+% Rec: List [pixhex | pixbit]
+% Descripcion: reglas que permiten recortan una imagen es un cuadrante dado, formado por 2 posiciones en la imagen
 
 crop([], _, _, _, _, _, _, ListaPixeles, ListaPixeles).
 crop([Pixel|Cdr], Ancho, Largo, X1, Y1, X2, Y2, NewPixeles, L):-
