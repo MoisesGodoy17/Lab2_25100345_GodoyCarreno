@@ -8,7 +8,6 @@ pixrgb-d(X, Y, R, G, B, Depth, [X, Y, R, G, B, Depth]).
 
 image(X, Y, Pixel, [X, Y, Pixel]).
 
-
 %damePixeles([_, _, Car|_], Car). %funcion que extrae la lista de pixeles de una imagen.
 
 % Si dejo de comentar la linea 15 mi invierte la lista. 
@@ -243,10 +242,24 @@ rotate90([Pixel|Cdr], Largo, Ancho, Acum, Temp, ListAux, L):-
     ;   pixbit-d(Acum, Temp, Bit, Depth, NewPixel), NewAcum is Acum + 1, agregar(NewPixel, ListAux, ImgRotada), rotate90(Cdr, Largo, Ancho, NewAcum, Temp, ImgRotada, L)
     ).
 
+%----------\Rotate90RGB\----------%
+rotate90RGB([], _, _, _, _, ImgRotada, ImgRotada).
+rotate90RGB([Pixel|Cdr], Largo, Ancho, Acum, Temp, ListAux, L):- 
+    pixrgb-d(_, _, R, G, B, Depth, Pixel),
+    (   Acum = Ancho %agregar el pixel acutal a la lista de pixeles, porque al activar este caso se lo saltara
+    ->  NewTemp is Temp - 1,  rotate90RGB([Pixel|Cdr], Largo, Ancho, 0, NewTemp, ListAux, L)
+    ;   pixrgb-d(Acum, Temp, R, G, B, Depth, NewPixel), NewAcum is Acum + 1, agregar(NewPixel, ListAux, ImgRotada),
+        rotate90RGB(Cdr, Largo, Ancho, NewAcum, Temp, ImgRotada, L)
+    ).
+%----------\\\\\\\\\\----------%
+
 imageRotate90( I, I2):-
     image(X, Y, Pixeles, I),
     NewX is X - 1,
-    rotate90(Pixeles, X, Y, 0, NewX, _, L),
+    (   pixelIsPixrgb(Pixeles)
+    ->  rotate90RGB(Pixeles, X, Y, 0, NewX, _, L)
+    ;   rotate90(Pixeles, X, Y, 0, NewX, _, L)
+    ),
     image(Y, X, L, I2).
 
 pixelToString([], _, _, AuxL, AuxL).
@@ -386,9 +399,13 @@ imageDepthLayers(I, LI):-
 % pixbit-d(1, 0, 1, 25, PC), pixbit-d( 1, 1, 0, 30, PD), 
 % image( 2, 2, [PA, PB, PC, PD], I), imageToHistogram( I , Histograma).
 
-%pixhex-d( 0, 0, '#AAFF01', 10, PA), pixhex-d( 0, 1, '#AAFF01', 20, PB), 
-%pixhex-d( 1, 0, '#0001FF', 25, PC),pixhex-d( 1, 1, '#AAFF01', 30, PD), 
-%image( 2, 2, [PA, PB, PC, PD], I), imageToHistogram( I , Histograma).
+% pixhex-d( 0, 0, '#AAFF01', 10, PA), pixhex-d( 0, 1, '#AAFF01', 20, PB), 
+% pixhex-d( 1, 0, '#0001FF', 25, PC),pixhex-d( 1, 1, '#AAFF01', 30, PD), 
+% image( 2, 2, [PA, PB, PC, PD], I), imageToHistogram( I , Histograma).
+
+% pixrgb-d( 0, 0, 10, 10, 10, 10, P1), pixrgb-d( 0, 1, 20, 20, 20, 20, P2), 
+% pixrgb-d( 1, 0, 30, 30, 30, 30, P3), pixrgb-d( 1, 1, 40, 40, 40, 40, P4), 
+% image( 2, 2, [P1, P2, P3, P4], I), imageRotate90(I, I2).
 
 % pixrgb-d( 0, 0, 10, 10, 10, 10, P1), pixrgb-d( 0, 1, 20, 20, 20, 20, P2), 
 % pixrgb-d( 1, 0, 30, 30, 30, 30, P3), pixrgb-d( 1, 1, 40, 40, 40, 40, P4), 
