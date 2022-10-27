@@ -311,26 +311,52 @@ estaDepth(Depth, [Depth|_]):-!, true.
 estaDepth(Depth, [_|Cdr]):-
     estaDepth(Depth, Cdr).
 
-makeImgDepth([], _, ImgDepth, ImgDepth).
-makeImgDepth([Pixel|Cdr], Depth, ListAux, L):-
+makeImgDepth([], _, _, ImgDepth, ImgDepth).
+makeImgDepth([Pixel|Cdr], TempDepth, Depth, ListAux, L):-
     pixbit-d( _, _, _, DepthP, Pixel),
 	(   Depth = DepthP
-    ->  agregar(Pixel, ListAux, ImgDepth ), makeImgDepth(Cdr, Depth, ImgDepth, L)
-    ;   agregar([1], ListAux, ImgDepth ), makeImgDepth(Cdr, Depth, ImgDepth, L)
+    ->  agregar(Pixel, ListAux, ImgDepth ), makeImgDepth(Cdr, TempDepth, Depth, ImgDepth, L)
+    ;   agregar([TempDepth], ListAux, ImgDepth ), makeImgDepth(Cdr, TempDepth, Depth, ImgDepth, L)
     ).
 
 makeImageDepthLayers([], _, _, _, _, ImgList, ImgList).
 makeImageDepthLayers([Pixel|Cdr], CopiPixs, X, Y, RepList, ListAux, L):-
+    (   pixelIsBitmap(CopiPixs)
+    ->  PixelBlanco = 1
+    ;   PixelBlanco = "#FFFFFF"
+    ),
     pixbit-d( _, _, _, Depth, Pixel),
     (   estaDepth(Depth, RepList)
     ->  makeImageDepthLayers(Cdr, CopiPixs, X, Y, RepList, ListAux, L)
-    ;   agregar(Depth, RepList, Repetidos), makeImgDepth(CopiPixs, Depth, _, ListDepth), image(X, Y, ListDepth, ImgDepth),
+    ;   agregar(Depth, RepList, Repetidos), makeImgDepth(CopiPixs, PixelBlanco, Depth, _, ListDepth), image(X, Y, ListDepth, ImgDepth),
         agregar(ImgDepth, ListAux, ImgList), makeImageDepthLayers(Cdr, CopiPixs, X, Y, Repetidos, ImgList, L)
     ).
 
+%----------\DepthLayersRGB\----------%
+makeImgDepthRGB([], _, ImgDepth, ImgDepth).
+makeImgDepthRGB([Pixel|Cdr], Depth, ListAux, L):-
+    pixrgb-d( _, _, _, _, _, DepthP, Pixel),
+	(   Depth = DepthP
+    ->  agregar(Pixel, ListAux, ImgDepth ), makeImgDepthRGB(Cdr, Depth, ImgDepth, L)
+    ;   agregar([255,255,255], ListAux, ImgDepth ), makeImgDepthRGB(Cdr, Depth, ImgDepth, L)
+    ).
+
+makeImageDepthLayersRGB([], _, _, _, _, ImgList, ImgList).
+makeImageDepthLayersRGB([Pixel|Cdr], CopiPixs, X, Y, RepList, ListAux, L):-
+    pixrgb-d( _, _, _, _, _, Depth, Pixel),
+    (   estaDepth(Depth, RepList)
+    ->  makeImageDepthLayersRGB(Cdr, CopiPixs, X, Y, RepList, ListAux, L)
+    ;   agregar(Depth, RepList, Repetidos), makeImgDepthRGB(CopiPixs, Depth, _, ListDepth), image(X, Y, ListDepth, ImgDepth),
+        agregar(ImgDepth, ListAux, ImgList), makeImageDepthLayersRGB(Cdr, CopiPixs, X, Y, Repetidos, ImgList, L)
+    ).
+%----------\\\\\\\\\\----------%
+
 imageDepthLayers(I, LI):-
     image( X, Y, Pixeles, I),
-    makeImageDepthLayers(Pixeles, Pixeles, X, Y, _, _, LI).
+    (   pixelIsPixrgb(Pixeles)
+    ->  makeImageDepthLayersRGB(Pixeles, Pixeles, X, Y, _, _, LI)
+    ;   makeImageDepthLayers(Pixeles, Pixeles, X, Y, _, _, LI)
+    ).
 
 %pixbit-d( 0, 0, 1, 10, PA), pixbit-d( 0, 1, 2, 20, PB), pixbit-d(1, 0, 3, 25, PC),
 %pixbit-d( 1, 1, 4, 30, PD), pixbit-d( 2, 0, 5, 4, PE), pixbit-d(2, 1, 6, 45, PF),
@@ -373,3 +399,7 @@ imageDepthLayers(I, LI):-
 % pixrgb-d( 1, 0, 30, 30, 30, 30, P3), pixrgb-d( 1, 1, 40, 40, 40, 40, P4), 
 % image( 2, 2, [P1, P2, P3, P4], I1), imageInvertColorRGB(P2, P2_modificado), 
 % imageChangePixel(I1, P2_modificado, I2).
+
+% pixrgb-d( 0, 0, 10, 10, 10, 10, P1), pixrgb-d( 0, 1, 20, 20, 20, 10, P2), 
+% pixrgb-d( 1, 0, 30, 30, 30, 30, P3), pixrgb-d( 1, 1, 40, 40, 40, 40, P4), 
+% image( 2, 2, [P1, P2, P3, P4], I), imageDepthLayers(I, LI).
