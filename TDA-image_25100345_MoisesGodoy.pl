@@ -306,6 +306,32 @@ imageChangePixel(I, P2_modificado, I2):-
     ),
     image( X, Y, L, I2).
 
+estaDepth(_, []):-!, false.
+estaDepth(Depth, [Depth|_]):-!, true.
+estaDepth(Depth, [_|Cdr]):-
+    estaDepth(Depth, Cdr).
+
+makeImgDepth([], _, ImgDepth, ImgDepth).
+makeImgDepth([Pixel|Cdr], Depth, ListAux, L):-
+    pixbit-d( _, _, _, DepthP, Pixel),
+	(   Depth = DepthP
+    ->  agregar(Pixel, ListAux, ImgDepth ), makeImgDepth(Cdr, Depth, ImgDepth, L)
+    ;   agregar([1], ListAux, ImgDepth ), makeImgDepth(Cdr, Depth, ImgDepth, L)
+    ).
+
+makeImageDepthLayers([], _, _, _, _, ImgList, ImgList).
+makeImageDepthLayers([Pixel|Cdr], CopiPixs, X, Y, RepList, ListAux, L):-
+    pixbit-d( _, _, _, Depth, Pixel),
+    (   estaDepth(Depth, RepList)
+    ->  makeImageDepthLayers(Cdr, CopiPixs, X, Y, RepList, ListAux, L)
+    ;   agregar(Depth, RepList, Repetidos), makeImgDepth(CopiPixs, Depth, _, ListDepth), image(X, Y, ListDepth, ImgDepth),
+        agregar(ImgDepth, ListAux, ImgList), makeImageDepthLayers(Cdr, CopiPixs, X, Y, Repetidos, ImgList, L)
+    ).
+
+imageDepthLayers(I, LI):-
+    image( X, Y, Pixeles, I),
+    makeImageDepthLayers(Pixeles, Pixeles, X, Y, _, _, LI).
+
 %pixbit-d( 0, 0, 1, 10, PA), pixbit-d( 0, 1, 2, 20, PB), pixbit-d(1, 0, 3, 25, PC),
 %pixbit-d( 1, 1, 4, 30, PD), pixbit-d( 2, 0, 5, 4, PE), pixbit-d(2, 1, 6, 45, PF),
 %image( 3, 2, [PA, PB, PC, PD, PE, PF], I), imgToString(I, ImgStr), write(ImgStr).
