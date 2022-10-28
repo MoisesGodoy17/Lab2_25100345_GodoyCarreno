@@ -198,25 +198,42 @@ flipV(I, I2):-
 % Meta secundaria: pixbit, agregar, crop
 % Dom: List [pixhex | pixbit] X Int X Int X Int X Int X Int X Int X Symbol X Symbol 
 % Rec: List [pixhex | pixbit]
-% Descripcion: reglas que permiten recortan una imagen es un cuadrante dado, formado por 2 posiciones en la imagen
+% Descripcion: reglas que permiten recortan una imagen en un cuadrante dado, formado por 2 posiciones en la imagen
 
 crop([], _, _, _, _, _, _, ListaPixeles, ListaPixeles).
 crop([Pixel|Cdr], Ancho, Largo, X1, Y1, X2, Y2, NewPixeles, L):-
     pixbit-d(X, Y, _, _, Pixel),
-    (   X1 =< X , X =< X2 , Y1 =< Y , Y =< Y2
+    (   X1 =< X , X =< X2 , Y1 =< Y , Y =< Y2 
     ->  agregar(Pixel, NewPixeles, ListaPixeles)
     ;   crop(Cdr, Ancho, Largo, X1, Y1, X2, Y2, NewPixeles, L)
     ),
     crop(Cdr, Ancho, Largo, X1, Y1, X2, Y2, ListaPixeles, L).
 
+% Meta principal: cropRGB
+% Meta secundaria: pixrgb, agregar, cropRGB
+% Dom: List [pixhex | pixbit] X Int X Int X Int X Int X Int X Int X Symbol X Symbol 
+% Rec: List [pixhex | pixbit]
+% Descripcion: reglas que permiten recortan una imagen contituida por pixrgb en un cuadrante dado, formado por 2 posiciones en la imagen
+
+% si recibe una imagen [[0,0,0,10] (P1), [0,1,1,20](P2), [1,0,1,30], [1,1,0,40]] y se desea recortar la imagen entre las posiciones
+% 0,1 y 1,1 recorrera la lista de pixeles preguntando si {X1 = 0 <= X(P1) = 0} = True, {X(P1) =< X2 = 0} = True, 
+% {Y1 = 1 =< Y(P1) = 0} = False, { Y(P1) = 1 =< Y2 = 1} = True, como el pixel tomado no cumple todas las condiciones
+% sera falso, y el siguiente (P2) si cumplira, por lo que sera agregado a la imagen recortada.
+
 cropRGB([], _, _, _, _, _, _, ListaPixeles, ListaPixeles).
 cropRGB([Pixel|Cdr], Ancho, Largo, X1, Y1, X2, Y2, NewPixeles, L):-
     pixrgb-d(X, Y, _, _, _, _, Pixel),
     (   X1 =< X , X =< X2 , Y1 =< Y , Y =< Y2
-    ->  agregar(Pixel, NewPixeles, ListaPixeles)
+    ->  agregar(Pixel, NewPixeles, ListaPixeles) % almacena los pixeles que cumplen con la condicion de recorte
     ;   cropRGB(Cdr, Ancho, Largo, X1, Y1, X2, Y2, NewPixeles, L)
     ),
     cropRGB(Cdr, Ancho, Largo, X1, Y1, X2, Y2, ListaPixeles, L).
+
+% Meta principal: crop
+% Meta secundaria: Image, cropRGB, crop
+% Dom: Image X Int X Int X Int X Int X Symbol 
+% Rec: Symbol (Imagen recortada)
+% Descripcion: regla que recorta los pixeles que estan dentro de las posiciones dadas como entrada
 
 imageCrop(I, X1, Y1, X2, Y2, I2):-
     image(X, Y, Pixeles, I),
@@ -224,17 +241,25 @@ imageCrop(I, X1, Y1, X2, Y2, I2):-
     ->  cropRGB(Pixeles, X, Y, X1, Y1, X2, Y2, _, L)
     ;   crop(Pixeles, X, Y, X1, Y1, X2, Y2, _, L)
     ),
-    NewX is ((X1 - X2) - 1)*(-1),
+    NewX is ((X1 - X2) - 1)*(-1), % nuevas dimensiones de la imagen en base a las posiciones en las que se desea recortar
     NewY is ((Y1 - Y2) - 1)*(-1),
     image(NewX, NewY, L, I2).
+
+% Meta principal: makeHes
+% Meta secundaria: hexConvert
+% Dom: Int X Symbol 
+% Rec: Symbol (Par hexadecimal)
+% Descripcion: regla recibe una componente [R | G | B] y la tranforma a Hex, para hacerlo divide el numero 
+% y los restos del mismo lo tranforma a hexadecimal, retornando el numero en el formato mencionado.
 
 makeHex(Num, NewCan):-
     Rest is div(Num, 16),
 	M is (Num - (16 * Rest)),
-    hexConvert(Rest, _, X), 
+    hexConvert(Rest, _, X),  % si el resto es igual a uno de los hechos, entonces tomara el valor (Int | String) que le corresponde al resto dado
     hexConvert(M, _, Y), 
-    atomic_concat(X, Y, NewCan).
+    atomic_concat(X, Y, NewCan). % concatena el resto y el residuo del numero, unificandolo en una variable
 
+% ----- \-> Hechos de conversion a Hexadecimal <-\----- %
 hexConvert(0, 0, 0).
 hexConvert(1, 1, 1).
 hexConvert(2, 2, 2).
@@ -251,6 +276,14 @@ hexConvert(12, "C", "C").
 hexConvert(13, "D", "D").
 hexConvert(14, "E", "E").
 hexConvert(15, "F", "F").
+% ----- \-> \\\\\\\\\\ <-\----- %
+
+% Meta principal: rgbToHex
+% Meta secundaria: pixrgb, makeHex, pixbit, agregar, rgbTohex
+% Dom: List [pixrgb] X Int, Int X Symbol1 X Symbol2
+% Rec: Symbol2 (Lista de pixeles en hexadecimal)
+% Descripcion: conjunto de reglas que transforma los pixrgb a hex, tomando un pixrgb y descomponiendo sus componentes 
+% para crear un numero en formato hexadecimal
 
 rgbToHex([], _, _, ListaPixeles, ListaPixeles).
 rgbToHex([Pixel|Cdr], Ancho, Largo, ListaAux, L):-
@@ -258,38 +291,56 @@ rgbToHex([Pixel|Cdr], Ancho, Largo, ListaAux, L):-
     makeHex(R, Cr),
     makeHex(G, Cg),
     makeHex(B, Cb),
-    atomic_concat("#", Cr, Hex),
+    atomic_concat("#", Cr, Hex), % entregar la componente de R y la tranforma en Hexadecimal
     atomic_concat(Hex, Cg, TempHex),
     atomic_concat(TempHex, Cb, AuxHex),
     pixbit-d(Y, X, AuxHex, Depth, PixelHex),
-    agregar(PixelHex, ListaAux, ListaPixeles),
+    agregar(PixelHex, ListaAux, ListaPixeles), % recibe el piixel en hex y agrga a una lista
     rgbToHex(Cdr, Ancho, Largo, ListaPixeles, L).
+
+% Meta principal: imageRGBToHex
+% Meta secundaria: Image X rgbToHex 
+% Dom: Image X Symbol
+% Rec: Symbol (Imagen pixmap)
+% Descripcion: regla que permite trasnformar una imagen pixmap a un representacion de pixhex
 
 imageRGBToHex(I, I2):-
     image(X, Y, Pixeles, I),
     rgbToHex(Pixeles, X, Y, _, L),
     image(X, Y, L, I2).
 
-pixelHisto(Bit, Cant, [Bit, Cant]).
+% Meta principal: estaPixel
+% Meta secundaria: estaPixel
+% Dom: [Int | String] X List [pixbit | pixhex] 
+% Rec: Boolean
+% Descripcion: regla que determina si un pixel esta en la lista histograma, sí está retorna True, si no retorna false
 
-estaPixel(_, []):-!, false.
-estaPixel(Pixel, [[Pixel|_]|_]):-!, true.
-estaPixel(Pixel, [_|Cdr]):-
+estaPixel(_, []):-!, false. % si la lista es vacia, entoces no hay nada, por lo que es false, no está
+estaPixel(Pixel, [[Pixel|_]|_]):-!, true. % si el elemento buscado aparece al inicio de la lista retornas true
+estaPixel(Pixel, [_|Cdr]):- % caso en que no se cumple ninguna casso borde. Solo recorre la lista
     estaPixel(Pixel, Cdr).
 
-%pertenece( Elemento, [Elemento|_] ).
-%pertenece( Elemento, [_|Resto] ) :-
-	%pertenece( Elemento, Resto ).
+% Meta principal: repetidos
+% Meta secundaria: pixdit, repetidos
+% Dom: List [pixbit | pixhex] X [Int | String] X Symbol1 X Symbol2   
+% Rec: Symbol 2
+% Descripcion: regla que cuenta las repeticiones de un bit dado, retornando cantidad de veces en que aparece
 
 repetidos([], _, Aux, Aux):-!.
 repetidos([Pix|Cdr], Pixel, Acc, L):-
     pixbit-d( _, _, Bit, _, Pix),
-    Nbit = Bit,
+    Nbit = Bit, % si el bit actual es igual al entregado, entoces suma uno en Acc
     (   Pixel = Nbit
     ->  Aux is Acc + 1
-    ;   Aux is Acc
+    ;   Aux is Acc % si no, Acc se mantiene igual
     ),
     repetidos(Cdr, Pixel, Aux, L).
+
+% Meta principal: histograma
+% Meta secundaria: pixdit, estaPixel, repetidos, histograma
+% Dom: List [pixbit | pixhex] X List [pixbit | pixhex] X Int X Int X Symbol1 X Symbol2
+% Rec: Symbol2 (Lista formada por el histograma, donde se encuentan los pixeles y sus repeticiones)
+% Descripcion: conjunto de reglas que genera una lista de los pixeles y sus repeticiones 
 
 histograma([], _, _, _, Histogram, Histogram):-!.
 histograma([Pixel|Cdr], Pixeles, Ancho, Largo, ListAux, L):-
@@ -302,10 +353,23 @@ histograma([Pixel|Cdr], Pixeles, Ancho, Largo, ListAux, L):-
     ).
 
 % ----- \-> PixRGB <-\----- %
+
+% Meta principal: estaPixelRGB
+% Meta secundaria: estaPixelRGB
+% Dom: Int X Int X Int X List 
+% Rec: Boolean
+% Descripcion: regla que determina si un pixel esta en la lista histograma, sí está retorna True, si no retorna false
+
 estaPixelRGB(_, _, _,[]):-!, false.
 estaPixelRGB(R, G, B, [[R, G, B, _]|_]):-!, true.
 estaPixelRGB(R, G, B, [_|Cdr]):-
     estaPixelRGB(R, G, B, Cdr).
+
+% Meta principal: repetidosRGB
+% Meta secundaria: pixrgb, repetidosrgb
+% Dom: List [pixrgb] X [Int | String] X Symbol1 X Symbol2   
+% Rec: Symbol 2
+% Descripcion: regla que cuenta las repeticiones de un pixrgb dado, retornando cantidad de veces en que aparece
     
 repetidosRGB([], _, Aux, Aux):-!.
 repetidosRGB([Pix|Cdr], Pixel, Acc, L):-
@@ -318,6 +382,12 @@ repetidosRGB([Pix|Cdr], Pixel, Acc, L):-
     ),
     repetidosRGB(Cdr, Pixel, Aux, L).
 
+% Meta principal: histogramaRGB
+% Meta secundaria: pixrgb, estaPixelRGB, repetidosRGB, histogramaRGB
+% Dom: List [pixrgb] X List [pixrgb] X Int X Int X Symbol1 X Symbol2
+% Rec: Symbol2 (Lista formada por el histograma, donde se encuentan los pixeles RGB y sus repeticiones)
+% Descripcion: conjunto de reglas que genera una lista de los pixeles RGB y sus repeticiones 
+
 histogramaRGB([], _, _, _, Histogram, Histogram):-!.
 histogramaRGB([Pixel|Cdr], Pixeles, Ancho, Largo, ListAux, L):-
     pixrgb-d( _, _, R, G, B, _, Pixel),
@@ -328,13 +398,19 @@ histogramaRGB([Pixel|Cdr], Pixeles, Ancho, Largo, ListAux, L):-
     ).
 % ----- \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ ----- %
 
+% Meta principal: imageToHistogram
+% Meta secundaria: image, pixelIsPixrgb, histogramaRGB, histograma
+% Dom: Image X Symbol
+% Rec: Symbol (Lista formada por el histograma, donde se encuentan los pixeles y sus repeticiones)
+% Descripcion: regla que retorna un histograma de pixeles, compuesto por los pixeles y la cantidad de apariciones
+
 imageToHistogram( I, Histograma):-
     image(X, Y, Pixeles, I),
-     (   pixelIsPixrgb(Pixeles)
-    ->  histogramaRGB(Pixeles, Pixeles, X, Y, _, L)
-    ;   histograma(Pixeles, Pixeles, X, Y, _, L)
-    ),
-    image(X, Y, L, Histograma).
+    (   pixelIsPixrgb(Pixeles)
+    ->  histogramaRGB(Pixeles, Pixeles, X, Y, _, Histograma)
+    ;   histograma(Pixeles, Pixeles, X, Y, _, Histograma)
+    ).
+    %,image(X, Y, L, Histograma).
 
 agregaInicio(Lista1, Elemento, [Elemento|Lista1]).
 
