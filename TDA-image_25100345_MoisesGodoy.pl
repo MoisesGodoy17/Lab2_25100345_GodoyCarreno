@@ -414,6 +414,13 @@ imageToHistogram( I, Histograma):-
 
 agregaInicio(Lista1, Elemento, [Elemento|Lista1]).
 
+% Meta principal: rotate90
+% Meta secundaria: pixbit, agregar, rotate90
+% Dom: List [pixbit | pixhex] X List [pixbit | pixhex] X Int X Int X Int X Symbol X Symbol2 X Symbol3
+% Rec: Symbol3 (lista de pixeles rotados 90 grados a la derecha)
+% Descripcion: conjunto de reglas que movifican los valores X e Y de un pixel, logrando rotar la imagen 90 grados a la derecha
+% Recursion: Natural
+
 rotate90([], _, _, _, _, ImgRotada, ImgRotada).
 rotate90([Pixel|Cdr], Largo, Ancho, Acum, Temp, ListAux, L):- 
     pixbit-d(_, _, Bit, Depth, Pixel),
