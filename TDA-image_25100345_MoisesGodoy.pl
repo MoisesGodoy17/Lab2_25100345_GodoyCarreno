@@ -430,42 +430,80 @@ rotate90([Pixel|Cdr], Largo, Ancho, Acum, Temp, ListAux, L):-
     ).
 
 %----------\Rotate90RGB\----------%
+
+% Meta principal: rotate90RGB
+% Meta secundaria: pixrgb, agregar, rotate90RGB
+% Dom: List [pixrgb] X List [pixrgb] X Int X Int X Int X Symbol X Symbol2 X Symbol3
+% Rec: Symbol3 (lista de pixeles rotados 90 grados a la derecha)
+% Descripcion: conjunto de reglas que modifican los valores X e Y de un pixelrgb, logrando rotar la imagen 90 grados a la derecha
+% Recursion: Natural
+
 rotate90RGB([], _, _, _, _, ImgRotada, ImgRotada).
 rotate90RGB([Pixel|Cdr], Largo, Ancho, Acum, Temp, ListAux, L):- 
     pixrgb-d(_, _, R, G, B, Depth, Pixel),
     (   Acum = Ancho %agregar el pixel acutal a la lista de pixeles, porque al activar este caso se lo saltara
     ->  NewTemp is Temp - 1,  rotate90RGB([Pixel|Cdr], Largo, Ancho, 0, NewTemp, ListAux, L)
-    ;   pixrgb-d(Acum, Temp, R, G, B, Depth, NewPixel), NewAcum is Acum + 1, agregar(NewPixel, ListAux, ImgRotada),
+    ;   pixrgb-d(Acum, Temp, R, G, B, Depth, NewPixel), NewAcum is Acum + 1,
+        agregar(NewPixel, ListAux, ImgRotada),
         rotate90RGB(Cdr, Largo, Ancho, NewAcum, Temp, ImgRotada, L)
     ).
 %----------\\\\\\\\\\----------%
 
+% Meta principal: imageRotate90
+% Meta secundaria: image, pixelIsPixrgb, rotate90RGB, rotate90
+% Dom: Image X Symbol
+% Rec: Symbol (imagen rotada 90 grados a la derecha)
+% Descripcion: reglas que permiten rotar una imagen 90 grados a la derecha, unificando la imagen rotada
+% Recursion: NULL
+
 imageRotate90( I, I2):-
     image(X, Y, Pixeles, I),
-    NewX is X - 1,
+    NewX is X - 1, % se le resta 1 pues las posiciones parten de 0
     (   pixelIsPixrgb(Pixeles)
     ->  rotate90RGB(Pixeles, X, Y, 0, NewX, _, L)
     ;   rotate90(Pixeles, X, Y, 0, NewX, _, L)
     ),
     image(Y, X, L, I2).
 
-pixelToString([], _, _, AuxL, AuxL).
+% Meta principal: pixelToString
+% Meta secundaria: pixbit, agregar, pixelToString
+% Dom: List [pixbit | pixhex] X Int X Int X Symbol X Symbol2
+% Rec: Symbol2 (lista de pixeles trasformados a string)
+% Descripcion: reglas transforman los pixeles pixbit y pixhex a un repreentacion String, aguardando los caracteres en una lista
+% Recursion: Natural
+
+pixelToString([], _, _, AuxL, AuxL). % falta agregarle la profundidad
 pixelToString([Pixel | Pixeles], Acum, Ancho, AuxL, L):-
     pixbit-d( _, _, Bit, _, Pixel),
     NewAcum is Acum + 1,
-    (   NewAcum = Ancho
+    (   NewAcum = Ancho % si NewAcum es igual a Ancho significa que hay que concatener un salto de linea "\n" al bit
     ->  atomic_concat(Bit, '\n', StrTemp), agregar(StrTemp, AuxL, ImgStr), pixelToString(Pixeles, 0, Ancho, ImgStr, L)
     ;   atomic_concat(Bit, '\t', StrTemp), agregar(StrTemp, AuxL, ImgStr), pixelToString(Pixeles, NewAcum, Ancho, ImgStr, L)
+    % caso en que se agregan los espacios "\t"
     ).
+
+% Meta principal: pixelToStringRGB
+% Meta secundaria: pixrgb, agregar, pixelToStringRGB
+% Dom: List [pixrgb] X Int X Int X Symbol X Symbol2
+% Rec: Symbol2 (lista de pixeles trasformados a string)
+% Descripcion: reglas transforman los pixeles pixrgb a una representacion de String, agregando saltos de lines y espacios a los caracteres
+% Recursion: Natural
 
 pixelToStringRGB([], _, _, AuxL, AuxL).
 pixelToStringRGB([Pixel | Pixeles], Acum, Ancho, AuxL, L):-
-    pixrgb-d(_, _, R, G, B, _, Pixel),
+    pixrgb-d(_, _, R, G, B, Depth, Pixel),
     NewAcum is Acum + 1,
     (   NewAcum = Ancho
-    ->  atomic_list_concat([R,G,B], StrP), atomic_concat(StrP, '\n', StrTemp), agregar(StrTemp, AuxL, ImgStr), pixelToStringRGB(Pixeles, 0, Ancho, ImgStr, L)
-    ;   atomic_list_concat([R,G,B], StrP), atomic_concat(StrP, '\t', StrTemp), agregar(StrTemp, AuxL, ImgStr), pixelToStringRGB(Pixeles, NewAcum, Ancho, ImgStr, L)
+    ->  atomic_list_concat([R,G,B,Depth], StrP), atomic_concat(StrP, '\n', StrTemp), agregar(StrTemp, AuxL, ImgStr), pixelToStringRGB(Pixeles, 0, Ancho, ImgStr, L)
+    ;   atomic_list_concat([R,G,B,Depth], StrP), atomic_concat(StrP, '\t', StrTemp), agregar(StrTemp, AuxL, ImgStr), pixelToStringRGB(Pixeles, NewAcum, Ancho, ImgStr, L)
     ).
+
+% Meta principal: imgToString
+% Meta secundaria: image, pixelIsPixrgb, pixelToString, pixelToStringRGB
+% Dom: Image X Symbol
+% Rec: Symbol (lista de pixeles trasformados a string)
+% Descripcion: reglas que convierten una imagen a una representacion de string, representando espacios y saltos de lineas en el caracter
+% Recursion: NULL
 
 imgToString(I, ImgStr):-
     image(_, Ancho, Pixeles, I),
@@ -473,16 +511,30 @@ imgToString(I, ImgStr):-
     ->  pixelToStringRGB(Pixeles, 0, Ancho, _, L)
     ;   pixelToString(Pixeles, 0, Ancho, _, L)
     ),
-    atomic_list_concat(L, ImgStr).
+    atomic_list_concat(L, ImgStr). % concatena la lista de pixeles generando una cadena de caracteres
+
+% Meta principal: changePixel
+% Meta secundaria: pixbit, agregar, changePixel
+% Dom: List [pixbit | pixhex] X [pixbit | pixhex] X Symbol1 X Symbol2
+% Rec: Symbol2 (retorna una lista de pixeles con uno de sus pixeles modificado)
+% Descripcion: reglas que permiten reemplazar en la imagen un pixel que tenga las misma posicion que el pixel ingresado a reemplazar
+% Recursion: Natural
 
 changePixel([], _, ImgMod, ImgMod).
 changePixel([Pixel|Cdr], PixelMod, ListAux, L):-
     pixbit-d(Xmod, Ymod, _, _, ImgMod),
     pixbit-d(X, Y, _, _, Pixel),
-    (   X = Xmod, Y = Ymod
-    ->  agregar(PixelMod, ListAux, ImgMod), changePixel(Cdr, PixelMod, ImgMod, L)
+    (   X = Xmod, Y = Ymod % si las posiciones del pixel actual son iguales a las del pixel dado, entoces agregar el pixel modificado
+    ->  agregar(PixelMod, ListAux, ImgMod), changePixel(Cdr, PixelMod, ImgMod, L) % agregar el pixel modificado o ingresado
     ;   changePixel(Cdr, PixelMod, ListAux, L)
     ).
+
+% Meta principal: changePixelRGB
+% Meta secundaria: pixbit, agregar, changePixel
+% Dom: List [pixrgb] X [pixrgb] X Symbol1 X Symbol2
+% Rec: Symbol2 (retorna una lista de pixeles RGB con uno de sus pixeles modificado)
+% Descripcion: reglas que permiten reemplazar en la imagen un pixel RGB que tenga las misma coordenadas que el pixel ingresado a reemplazar
+% Recursion: Natural
 
 changePixelRGB([], _, ImgMod, ImgMod).
 changePixelRGB([Pixel|Cdr], PixelMod, ListAux, L):-
@@ -493,10 +545,24 @@ changePixelRGB([Pixel|Cdr], PixelMod, ListAux, L):-
     ;   agregar(Pixel, ListAux, ImgMod), changePixelRGB(Cdr, PixelMod, ImgMod, L)
     ).
 
+% Meta principal: imageInvertColorRGB
+% Meta secundaria: pixrgb
+% Dom: pixrgb X Symbol
+% Rec: Symbol (retorna un pixel rgb invertido)
+% Descripcion: regla que permite invertir un pixrgb, ej: 255 -> 0
+% Recursion: NULL
+
 imageInvertColorRGB(P2, P2_modificado):-
     pixrgb-d(_, _, R, G, B, _, P2),
     NewR is 255 - R, NewG is 255 - G, NewB is 255 - B,
     pixrgb-d(_, _, NewR, NewG, NewB, _, P2_modificado).
+
+% Meta principal: imageChangePixel
+% Meta secundaria: Image, pixelIsPixrgb, changoPixelRGB, changePixel
+% Dom: pixrgb X [pixrgb | pixhex | pixbit X Symbol
+% Rec: Symbol (nueva imagen con uno de sus pixeles modificados
+% Descripcion: conjunto de reglas que genera una imagen con uno de sus pixeles modificados
+% Recursion: NULL
     
 imageChangePixel(I, P2_modificado, I2):-
     image( X, Y, Pixeles, I),
@@ -598,6 +664,10 @@ imageDepthLayers(I, LI):-
 % pixrgb-d( 1, 0, 30, 30, 30, 30, P3), pixrgb-d( 1, 1, 40, 40, 40, 40, P4), 
 % image( 2, 2, [P1, P2, P3, P4], I), 
 % pixrgb-d( 0, 1, 54, 54, 54, 20, P2_modificado), imageChangePixel(I, P2_modificado, I2).
+
+%pixrgb-d( 0, 0, 10, 10, 10, 10, P1), pixrgb-d( 0, 1, 20, 20, 20, 20, P2), 
+%pixrgb-d( 1, 0, 30, 30, 30, 30, P3), pixrgb-d( 1, 1, 40, 40, 40, 40, P4), 
+%image( 2, 2, [P1, P2, P3, P4], I),imgToString(I, ImgStr).
 
 % pixrgb-d( 0, 0, 10, 10, 10, 10, P1), pixrgb-d( 0, 1, 20, 20, 20, 20, P2), 
 % pixrgb-d( 1, 0, 30, 30, 30, 30, P3), pixrgb-d( 1, 1, 40, 40, 40, 40, P4), 
