@@ -713,6 +713,10 @@ imageDepthLayers(I, LI):-
 % image( 2, 2, [P1, P2, P3, P4], I), 
 % pixrgb-d( 0, 1, 54, 54, 54, 20, P2_modificado), imageChangePixel(I, P2_modificado, I2).
 
+%pixrgb-d( 0, 0, 10, 10, 10, 10, P1), pixrgb-d( 0, 1, 20, 20, 20, 20, P2), 
+%pixrgb-d( 1, 0, 30, 30, 30, 30, P3), pixrgb-d( 1, 1, 40, 40, 40, 40, P4), 
+%image( 2, 2, [P1, P2, P3, P4], I),imgToString(I, ImgStr).
+
 % pixrgb-d( 0, 0, 10, 10, 10, 10, P1), pixrgb-d( 0, 1, 20, 20, 20, 20, P2), 
 % pixrgb-d( 1, 0, 30, 30, 30, 30, P3), pixrgb-d( 1, 1, 40, 40, 40, 40, P4), 
 % image( 2, 2, [P1, P2, P3, P4], I1), imageInvertColorRGB(P2, P2_modificado), 
