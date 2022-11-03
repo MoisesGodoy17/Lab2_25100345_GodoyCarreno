@@ -5,4 +5,4 @@
 % Descripcion: regla Constructora del TDA pixbit
 % Recursion: NULL
 
-pixbit-d(X, Y, Bit, Depth, [X, Y, Bit, Depth]).
+pixbit(X, Y, Bit, Depth, [X, Y, Bit, Depth]).
