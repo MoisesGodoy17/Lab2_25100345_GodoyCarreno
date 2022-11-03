@@ -5,4 +5,4 @@
 % Descripcion: regla Constructora del TDA pixhex
 % Recursion: NULL
 
-pixhex-d(X, Y, Hex, Depth, [X, Y, Hex, Depth]).
+pixhex(X, Y, Hex, Depth, [X, Y, Hex, Depth]).
