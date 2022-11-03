@@ -5,4 +5,4 @@
 % Descripcion: regla Constructora del TDA pixrgb
 % Recursion: NULL
 
-pixrgb-d(X, Y, R, G, B, Depth, [X, Y, R, G, B, Depth]).
+pixrgb(X, Y, R, G, B, Depth, [X, Y, R, G, B, Depth]).
