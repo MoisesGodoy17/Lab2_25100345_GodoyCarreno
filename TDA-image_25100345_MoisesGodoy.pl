@@ -4,33 +4,6 @@
 :- include(tda_pixrgb_25100345_moises_godoy).
 :- include(tda_pixhex_25100345_moises_godoy).
 
-% Meta principal: pixbit
-% Meta secundaria: Null
-% Dom: Int X Int X Int X Int X pixbit
-% Rec: pixbit
-% Descripcion: regla Constructora del TDA pixbit
-% Recursion: NULL
-
-%pixbit-d(X, Y, Bit, Depth, [X, Y, Bit, Depth]).
-
-% Meta principal: pixhex
-% Meta secundaria: Null
-% Dom: Int X Int X String X Int X pixhex
-% Rec: pixhex
-% Descripcion: regla Constructora del TDA pixhex
-% Recursion: NULL
-
-%pixhex-d(X, Y, Hex, Depth, [X, Y, Hex, Depth]).
-
-% Meta principal: pixrgb
-% Meta secundaria: Null
-% Dom: Int X Int X Int X Int X Int X Int X pixrgb
-% Rec: pixrgb
-% Descripcion: regla Constructora del TDA pixrgb
-% Recursion: NULL
-
-%pixrgb-d(X, Y, R, G, B, Depth, [X, Y, R, G, B, Depth]).
-
 % Meta principal: image
 % Meta secundaria: Null
 % Dom: Int X Int X [pixrgb | pixhex| pixbit] X Image
@@ -60,7 +33,7 @@ agregar(E, [X|Y], [X|Z]):- % caso recursivo donde se recorre la lista hasta lleg
 
 pixelIsBitmap([]).
 pixelIsBitmap([Pixel|Cdr]) :-
-    pixbit-d(_, _, Bit, _, Pixel),
+    pixbit(_, _, Bit, _, Pixel),
     (Bit == 0 ; Bit == 1), % si el Bit es 0 o 1, entoces es un True y sigue con la verificacion
     pixelIsBitmap(Cdr).
 
@@ -84,7 +57,7 @@ imageIsBitmap(Image) :-
 
 pixelIsPixrgb([]).
 pixelIsPixrgb([Pixel|Cdr]):-
-    pixrgb-d( _, _, R, G, B, _, Pixel), % en caso de entregar un pixbit o pixhex dara falso
+    pixrgb( _, _, R, G, B, _, Pixel), % en caso de entregar un pixbit o pixhex dara falso
     (R >= 0 , R =< 255), % si las componentes del RGB estan entre 0 y 255 entonces corresponden a un pixrgb
     (G >= 0 , G =< 255),
     (B >= 0 , B =< 255),
@@ -110,7 +83,7 @@ imageIsPixmap(Image):-
 
 pixelIsHexmap([]).
 pixelIsHexmap([Pixel| Cdr]):-
-    pixhex-d( _, _, Hex, _, Pixel),
+    pixhex( _, _, Hex, _, Pixel),
     string(Hex), % pregunta si el bit es String
     pixelIsHexmap(Cdr).
 
@@ -125,6 +98,32 @@ imageIsHexmap(Image) :-
     image(_, _, Pixeles, Image),
     pixelIsHexmap(Pixeles).
 
+% Meta principal: imagenEstaComprimida
+% Meta secundaria: imagenEstaComprimida
+% Dom: List [pixrgb | pixhex| pixbit] X Int Symbol
+% Rec: Boolean
+% Descripcion: reglas que permiten determinar si una imagen ha sido comprimida, comparando la cantidad de pixeles
+% con la cantidad de elementos que se generan al multiplicar las dimensiones de la matris.
+% Recursion: Natural
+
+imagenEstaComprimida([], CantElementos, CantElementos):- !, false.% si la cantidad de elementos varia respecto a la multiplicacion de las dimensiones, entonces es false
+imagenEstaComprimida([], _, _).
+imagenEstaComprimida([_| Cdr], Aux, CantElements):-
+    Cant is Aux + 1, %almacena la cantidad de elementos 
+    imagenEstaComprimida(Cdr, Cant, CantElements).
+
+% Meta principal: imageIsCompressed
+% Meta secundaria: imageIsCompressed, imagen
+% Dom: imagen 
+% Rec: Boolean
+% Descripcion: reglas que determinan si una imagen fue comprimida. 
+% Recursion: Null
+
+imageIsCompressed(I):-
+    image(X, Y, Pixeles, I),
+    CantEleme is (X * Y),
+    imagenEstaComprimida(Pixeles, 0, CantEleme). 
+
 % Meta principal: invierteImagenH
 % Meta secundaria: pixbit, agregar, invierteImagenH
 % Dom: List [pixbit | pixhex] X Int X Int X Symbol X Symbol
@@ -134,9 +133,9 @@ imageIsHexmap(Image) :-
 
 invierteImagenH([], _, _, ListaPixeles, ListaPixeles).
 invierteImagenH([Pixel|Cdr], Ancho, Largo, NewPixeles, L):-
-    pixbit-d(X, Y, Bit, Depth, Pixel),
+    pixbit(X, Y, Bit, Depth, Pixel),
     NewY is  (Y - (Ancho - 1)) * (-1), % se invierte el valor de la coordenada Y
-    pixbit-d(X, NewY, Bit, Depth, NewPixel), % se crea un nuevo bit con la nueva coordenada
+    pixbit(X, NewY, Bit, Depth, NewPixel), % se crea un nuevo bit con la nueva coordenada
     agregar(NewPixel, NewPixeles, ListaPixeles),
     invierteImagenH(Cdr, Ancho, Largo, ListaPixeles, L).
 
@@ -149,13 +148,13 @@ invierteImagenH([Pixel|Cdr], Ancho, Largo, NewPixeles, L):-
 
 invierteImagenHRGB([], _, _, ListaPixeles, ListaPixeles).
 invierteImagenHRGB([Pixel|Cdr], Ancho, Largo, NewPixeles, L):-
-   pixrgb-d(X, Y, R, G, B, Depth, Pixel),
+   pixrgb(X, Y, R, G, B, Depth, Pixel),
    NewY is  (Y - (Ancho - 1)) * (-1),
-   pixrgb-d(X, NewY, R, G, B, Depth, NewPixel), % crea el nuevo pixrgb con la coordenada nueva
+   pixrgb(X, NewY, R, G, B, Depth, NewPixel), % crea el nuevo pixrgb con la coordenada nueva
    agregar(NewPixel, NewPixeles, ListaPixeles),
    invierteImagenHRGB(Cdr, Ancho, Largo, ListaPixeles, L).
 
-% Meta principal: flipH
+% Meta principal: imageFlipH
 % Meta secundaria: Image, pixelIsPixrgb, invierteImagenHRGB, invierteImagenH
 % Dom: Image X Symbol (NewImagen)
 % Rec: Imagen
@@ -163,7 +162,7 @@ invierteImagenHRGB([Pixel|Cdr], Ancho, Largo, NewPixeles, L):-
 % Recursion: NULL
 
 
-flipH(I, I2):-
+imageFlipH(I, I2):-
     image(X, Y, Pixeles, I),
     (   pixelIsPixrgb(Pixeles)
     ->  invierteImagenHRGB(Pixeles, X, Y, _, L)
@@ -180,9 +179,9 @@ flipH(I, I2):-
 
 invierteImagenV([], _, _, ListaPixeles, ListaPixeles).
 invierteImagenV([Pixel|Cdr], Ancho, Largo, NewPixeles, L):-
-    pixbit-d(X, Y, Bit, Depth, Pixel),
+    pixbit(X, Y, Bit, Depth, Pixel),
     NewX is  (X - (Largo - 1)) * (-1), % invierte el bit, ej: X = 0 pase a ser X = 2 (en caso de que el largo de la imagen sea 2)
-    pixbit-d(NewX, Y, Bit, Depth, NewPixel), % crea un nuevo pixel con la coordenada X invertida
+    pixbit(NewX, Y, Bit, Depth, NewPixel), % crea un nuevo pixel con la coordenada X invertida
     agregar(NewPixel, NewPixeles, ListaPixeles), % agrega el pixel a una lista de pixeles
     invierteImagenV(Cdr, Ancho, Largo, ListaPixeles, L).
 
@@ -195,20 +194,20 @@ invierteImagenV([Pixel|Cdr], Ancho, Largo, NewPixeles, L):-
 
 invierteImagenVRGB([], _, _, ListaPixeles, ListaPixeles).
 invierteImagenVRGB([Pixel|Cdr], Ancho, Largo, NewPixeles, L):-
-    pixrgb-d(X, Y, R, G, B, Depth, Pixel),
+    pixrgb(X, Y, R, G, B, Depth, Pixel),
     NewX is  (X - (Largo - 1)) * (-1),
-    pixrgb-d(NewX, Y, R, G, B, Depth, NewPixel),
+    pixrgb(NewX, Y, R, G, B, Depth, NewPixel),
     agregar(NewPixel, NewPixeles, ListaPixeles),
     invierteImagenVRGB(Cdr, Ancho, Largo, ListaPixeles, L).
 
-% Meta principal: flipV
+% Meta principal: imageFlipV
 % Meta secundaria: Image, pixelIsPixrgb, invierteImagenVRGB, invierteImagenV
 % Dom: Image X Symbol (New Image)
 % Rec: Imagen
 % Descripcion: reglas que permiten girar verticalmente una imagen cambiando las coordenadas del eje "X"
 % Recursion: NULL
 
-flipV(I, I2):-
+imageFlipV(I, I2):-
     image(X, Y, Pixeles, I),
     (   pixelIsPixrgb(Pixeles)
     ->  invierteImagenVRGB(Pixeles, X, Y, _, L)
@@ -225,7 +224,7 @@ flipV(I, I2):-
 
 crop([], _, _, _, _, _, _, ListaPixeles, ListaPixeles).
 crop([Pixel|Cdr], Ancho, Largo, X1, Y1, X2, Y2, NewPixeles, L):-
-    pixbit-d(X, Y, _, _, Pixel),
+    pixbit(X, Y, _, _, Pixel),
     (   X1 =< X , X =< X2 , Y1 =< Y , Y =< Y2
     ->  agregar(Pixel, NewPixeles, ListaPixeles)
     ;   crop(Cdr, Ancho, Largo, X1, Y1, X2, Y2, NewPixeles, L)
@@ -246,7 +245,7 @@ crop([Pixel|Cdr], Ancho, Largo, X1, Y1, X2, Y2, NewPixeles, L):-
 
 cropRGB([], _, _, _, _, _, _, ListaPixeles, ListaPixeles).
 cropRGB([Pixel|Cdr], Ancho, Largo, X1, Y1, X2, Y2, NewPixeles, L):-
-    pixrgb-d(X, Y, _, _, _, _, Pixel),
+    pixrgb(X, Y, _, _, _, _, Pixel),
     (   X1 =< X , X =< X2 , Y1 =< Y , Y =< Y2
     ->  agregar(Pixel, NewPixeles, ListaPixeles) % almacena los pixeles que cumplen con la condicion de recorte
     ;   cropRGB(Cdr, Ancho, Largo, X1, Y1, X2, Y2, NewPixeles, L)
@@ -314,14 +313,14 @@ hexConvert(15, "F", "F").
 
 rgbToHex([], _, _, ListaPixeles, ListaPixeles).
 rgbToHex([Pixel|Cdr], Ancho, Largo, ListaAux, L):-
-    pixrgb-d(X, Y, R, G, B, Depth, Pixel),
+    pixrgb(X, Y, R, G, B, Depth, Pixel),
     makeHex(R, Cr),
     makeHex(G, Cg),
     makeHex(B, Cb),
     atomic_concat("#", Cr, Hex), % entregar la componente de R y la tranforma en Hexadecimal
     atomic_concat(Hex, Cg, TempHex),
     atomic_concat(TempHex, Cb, AuxHex),
-    pixbit-d(Y, X, AuxHex, Depth, PixelHex),
+    pixbit(Y, X, AuxHex, Depth, PixelHex),
     agregar(PixelHex, ListaAux, ListaPixeles), % recibe el piixel en hex y agrga a una lista
     rgbToHex(Cdr, Ancho, Largo, ListaPixeles, L).
 
@@ -358,7 +357,7 @@ estaPixel(Pixel, [_|Cdr]):- % caso en que no se cumple ninguna casso borde. Solo
 
 repetidos([], _, Aux, Aux):-!.
 repetidos([Pix|Cdr], Pixel, Acc, L):-
-    pixbit-d( _, _, Bit, _, Pix),
+    pixbit( _, _, Bit, _, Pix),
     Nbit = Bit, % si el bit actual es igual al entregado, entoces suma uno en Acc
     (   Pixel = Nbit
     ->  Aux is Acc + 1
@@ -375,7 +374,7 @@ repetidos([Pix|Cdr], Pixel, Acc, L):-
 
 histograma([], _, _, _, Histogram, Histogram):-!.
 histograma([Pixel|Cdr], Pixeles, Ancho, Largo, ListAux, L):-
-    pixbit-d( _, _, Bit, _, Pixel ),
+    pixbit( _, _, Bit, _, Pixel ),
     NewBit = Bit,
     (   estaPixel(NewBit, ListAux)
     ->  histograma(Cdr, Pixeles, Ancho, Largo, ListAux, L)
@@ -406,8 +405,8 @@ estaPixelRGB(R, G, B, [_|Cdr]):-
 
 repetidosRGB([], _, Aux, Aux):-!.
 repetidosRGB([Pix|Cdr], Pixel, Acc, L):-
-    pixrgb-d( _, _, R, G, B, _, Pix),
-    pixrgb-d( _, _, RP, GP, BP, _, Pixel),
+    pixrgb( _, _, R, G, B, _, Pix),
+    pixrgb( _, _, RP, GP, BP, _, Pixel),
     NewR = R, NewG = G, NewB = B,
     (   RP = NewR, GP = NewG, BP = NewB
     ->  Aux is Acc + 1
@@ -424,7 +423,7 @@ repetidosRGB([Pix|Cdr], Pixel, Acc, L):-
 
 histogramaRGB([], _, _, _, Histogram, Histogram):-!.
 histogramaRGB([Pixel|Cdr], Pixeles, Ancho, Largo, ListAux, L):-
-    pixrgb-d( _, _, R, G, B, _, Pixel),
+    pixrgb( _, _, R, G, B, _, Pixel),
     (   estaPixelRGB(R,G,B, ListAux)
     ->  histogramaRGB(Cdr, Pixeles, Ancho, Largo, ListAux, L)
     ;   repetidosRGB(Pixeles, Pixel, 0, Cant), agregar([R,G,B, Cant], ListAux, Histogram),
@@ -458,10 +457,10 @@ imageToHistogram( I, Histograma):-
 
 rotate90([], _, _, _, _, ImgRotada, ImgRotada).
 rotate90([Pixel|Cdr], Largo, Ancho, Acum, Temp, ListAux, L):-
-    pixbit-d(_, _, Bit, Depth, Pixel),
+    pixbit(_, _, Bit, Depth, Pixel),
     (   Acum = Ancho % agrega el pixel actual a la lista de pixeles, porque al activar este caso se lo saltara
     ->  NewTemp is Temp - 1,  rotate90([Pixel|Cdr], Largo, Ancho, 0, NewTemp, ListAux, L) % Temp es igual a Y
-    ;   pixbit-d(Acum, Temp, Bit, Depth, NewPixel), NewAcum is Acum + 1, % el primer pixel de la lista tendra Temp (X) = Y y Acum (New X) = X
+    ;   pixbit(Acum, Temp, Bit, Depth, NewPixel), NewAcum is Acum + 1, % el primer pixel de la lista tendra Temp (X) = Y y Acum (New X) = X
         % de esta froma se logra rotar el pixel
         agregar(NewPixel, ListAux, ImgRotada),
         rotate90(Cdr, Largo, Ancho, NewAcum, Temp, ImgRotada, L)
@@ -478,10 +477,10 @@ rotate90([Pixel|Cdr], Largo, Ancho, Acum, Temp, ListAux, L):-
 
 rotate90RGB([], _, _, _, _, ImgRotada, ImgRotada).
 rotate90RGB([Pixel|Cdr], Largo, Ancho, Acum, Temp, ListAux, L):-
-    pixrgb-d(_, _, R, G, B, Depth, Pixel),
+    pixrgb(_, _, R, G, B, Depth, Pixel),
     (   Acum = Ancho
     ->  NewTemp is Temp - 1,  rotate90RGB([Pixel|Cdr], Largo, Ancho, 0, NewTemp, ListAux, L)
-    ;   pixrgb-d(Acum, Temp, R, G, B, Depth, NewPixel), NewAcum is Acum + 1,
+    ;   pixrgb(Acum, Temp, R, G, B, Depth, NewPixel), NewAcum is Acum + 1,
         agregar(NewPixel, ListAux, ImgRotada),
         rotate90RGB(Cdr, Largo, Ancho, NewAcum, Temp, ImgRotada, L)
     ).
@@ -512,7 +511,7 @@ imageRotate90( I, I2):-
 
 pixelToString([], _, _, AuxL, AuxL). % falta agregarle la profundidad
 pixelToString([Pixel | Pixeles], Acum, Ancho, AuxL, L):-
-    pixbit-d( _, _, Bit, _, Pixel),
+    pixbit( _, _, Bit, _, Pixel),
     NewAcum is Acum + 1,
     (   NewAcum = Ancho % si NewAcum es igual a Ancho significa que hay que concatener un salto de linea "\n" al bit
     ->  atomic_concat(Bit, '\n', StrTemp), agregar(StrTemp, AuxL, ImgStr), pixelToString(Pixeles, 0, Ancho, ImgStr, L)
@@ -529,7 +528,7 @@ pixelToString([Pixel | Pixeles], Acum, Ancho, AuxL, L):-
 
 pixelToStringRGB([], _, _, AuxL, AuxL).
 pixelToStringRGB([Pixel | Pixeles], Acum, Ancho, AuxL, L):-
-    pixrgb-d(_, _, R, G, B, Depth, Pixel),
+    pixrgb(_, _, R, G, B, _, Pixel),
     NewAcum is Acum + 1,
     (   NewAcum = Ancho
     ->  atomic_list_concat([R,G,B], StrP), atomic_concat(StrP, '\n', StrTemp), agregar(StrTemp, AuxL, ImgStr), pixelToStringRGB(Pixeles, 0, Ancho, ImgStr, L)
@@ -543,7 +542,7 @@ pixelToStringRGB([Pixel | Pixeles], Acum, Ancho, AuxL, L):-
 % Descripcion: reglas que convierten una imagen a una representacion de string, representando espacios y saltos de lineas en el caracter
 % Recursion: NULL
 
-imgToString(I, ImgStr):-
+imageToString(I, ImgStr):-
     image(_, Ancho, Pixeles, I),
     (   pixelIsPixrgb(Pixeles)
     ->  pixelToStringRGB(Pixeles, 0, Ancho, _, L)
@@ -560,8 +559,8 @@ imgToString(I, ImgStr):-
 
 changePixel([], _, ImgMod, ImgMod).
 changePixel([Pixel|Cdr], PixelMod, ListAux, L):-
-    pixbit-d(Xmod, Ymod, _, _, ImgMod),
-    pixbit-d(X, Y, _, _, Pixel),
+    pixbit(Xmod, Ymod, _, _, ImgMod),
+    pixbit(X, Y, _, _, Pixel),
     (   X = Xmod, Y = Ymod % si las posiciones del pixel actual son iguales a las del pixel dado, entoces agregar el pixel modificado
     ->  agregar(PixelMod, ListAux, ImgMod), changePixel(Cdr, PixelMod, ImgMod, L) % agregar el pixel modificado o ingresado
     ;   changePixel(Cdr, PixelMod, ListAux, L)
@@ -576,8 +575,8 @@ changePixel([Pixel|Cdr], PixelMod, ListAux, L):-
 
 changePixelRGB([], _, ImgMod, ImgMod).
 changePixelRGB([Pixel|Cdr], PixelMod, ListAux, L):-
-    pixrgb-d(Xmod, Ymod, _, _, _, _, PixelMod),
-    pixrgb-d(X, Y, _, _, _, _, Pixel),
+    pixrgb(Xmod, Ymod, _, _, _, _, PixelMod),
+    pixrgb(X, Y, _, _, _, _, Pixel),
     (   X = Xmod, Y = Ymod
     ->  agregar(PixelMod, ListAux, ImgMod), changePixelRGB(Cdr, PixelMod, ImgMod, L)
     ;   agregar(Pixel, ListAux, ImgMod), changePixelRGB(Cdr, PixelMod, ImgMod, L)
@@ -591,9 +590,9 @@ changePixelRGB([Pixel|Cdr], PixelMod, ListAux, L):-
 % Recursion: NULL
 
 imageInvertColorRGB(P2, P2_modificado):-
-    pixrgb-d(_, _, R, G, B, _, P2),
+    pixrgb(_, _, R, G, B, _, P2),
     NewR is 255 - R, NewG is 255 - G, NewB is 255 - B,
-    pixrgb-d(_, _, NewR, NewG, NewB, _, P2_modificado).
+    pixrgb(_, _, NewR, NewG, NewB, _, P2_modificado).
 
 % Meta principal: imageChangePixel
 % Meta secundaria: Image, pixelIsPixrgb, changoPixelRGB, changePixel
@@ -632,7 +631,7 @@ estaDepth(Depth, [_|Cdr]):-
 
 makeImgDepth([], _, _, ImgDepth, ImgDepth).
 makeImgDepth([Pixel|Cdr], TempDepth, Depth, ListAux, L):-
-    pixbit-d( _, _, _, DepthP, Pixel),
+    pixbit( _, _, _, DepthP, Pixel),
 	(   Depth = DepthP % si la profundidad de un pixel es igual a la del pixel a comparar, entoces se agrega, de no ser asi se agregara un pixel balco a la lista
     ->  agregar(Pixel, ListAux, ImgDepth ), makeImgDepth(Cdr, TempDepth, Depth, ImgDepth, L)
     ;   agregar([TempDepth], ListAux, ImgDepth ), makeImgDepth(Cdr, TempDepth, Depth, ImgDepth, L)
@@ -651,7 +650,7 @@ makeImageDepthLayers([Pixel|Cdr], CopiPixs, X, Y, RepList, ListAux, L):-
     ->  PixelBlanco = 1
     ;   PixelBlanco = "#FFFFFF"
     ),
-    pixbit-d( _, _, _, Depth, Pixel),
+    pixbit( _, _, _, Depth, Pixel),
     (   estaDepth(Depth, RepList) % si ya ha sido revizado un nivel de profundidad, entoces se sigue recorriendo la imagen
     ->  makeImageDepthLayers(Cdr, CopiPixs, X, Y, RepList, ListAux, L) % caso en que la profundidad actual no ha sido usada para crear una imagen
     ;   agregar(Depth, RepList, Repetidos), makeImgDepth(CopiPixs, PixelBlanco, Depth, _, ListDepth), image(X, Y, ListDepth, ImgDepth),
@@ -670,7 +669,7 @@ makeImageDepthLayers([Pixel|Cdr], CopiPixs, X, Y, RepList, ListAux, L):-
 
 makeImgDepthRGB([], _, ImgDepth, ImgDepth).
 makeImgDepthRGB([Pixel|Cdr], Depth, ListAux, L):-
-    pixrgb-d( _, _, _, _, _, DepthP, Pixel),
+    pixrgb( _, _, _, _, _, DepthP, Pixel),
 	(   Depth = DepthP
     ->  agregar(Pixel, ListAux, ImgDepth ), makeImgDepthRGB(Cdr, Depth, ImgDepth, L)
     ;   agregar([255,255,255], ListAux, ImgDepth ), makeImgDepthRGB(Cdr, Depth, ImgDepth, L)
@@ -685,7 +684,7 @@ makeImgDepthRGB([Pixel|Cdr], Depth, ListAux, L):-
 
 makeImageDepthLayersRGB([], _, _, _, _, ImgList, ImgList).
 makeImageDepthLayersRGB([Pixel|Cdr], CopiPixs, X, Y, RepList, ListAux, L):-
-    pixrgb-d( _, _, _, _, _, Depth, Pixel),
+    pixrgb( _, _, _, _, _, Depth, Pixel),
     (   estaDepth(Depth, RepList)
     ->  makeImageDepthLayersRGB(Cdr, CopiPixs, X, Y, RepList, ListAux, L)
     ;   agregar(Depth, RepList, Repetidos), makeImgDepthRGB(CopiPixs, Depth, _, ListDepth), image(X, Y, ListDepth, ImgDepth),
