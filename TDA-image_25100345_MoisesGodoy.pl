@@ -559,11 +559,11 @@ imageToString(I, ImgStr):-
 
 changePixel([], _, ImgMod, ImgMod).
 changePixel([Pixel|Cdr], PixelMod, ListAux, L):-
-    pixbit(Xmod, Ymod, _, _, ImgMod),
+    pixbit(Xmod, Ymod, _, _, PixelMod),
     pixbit(X, Y, _, _, Pixel),
     (   X = Xmod, Y = Ymod % si las posiciones del pixel actual son iguales a las del pixel dado, entoces agregar el pixel modificado
     ->  agregar(PixelMod, ListAux, ImgMod), changePixel(Cdr, PixelMod, ImgMod, L) % agregar el pixel modificado o ingresado
-    ;   changePixel(Cdr, PixelMod, ListAux, L)
+    ;   agregar(Pixel, ListAux, ImgMod), changePixel(Cdr, PixelMod, ImgMod, L)
     ).
 
 % Meta principal: changePixelRGB
